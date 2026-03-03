@@ -1,0 +1,19 @@
+services:
+  backend:
+    container_name: stock-assistant-backend
+    build:
+      context: ..
+      dockerfile: deploy/backend.Dockerfile
+    image: stock-assistant-backend:latest
+    restart: unless-stopped
+    environment:
+      APP_ENV: prod
+      DEBUG: "false"
+      API_PREFIX: /api/v1
+      DATABASE_URL: sqlite:////data/stock_assistant.db
+      AUTH_SECRET: ${AUTH_SECRET:-stock-assistant-prod-secret-change-me}
+      AUTH_TOKEN_EXPIRE_MINUTES: "1440"
+    ports:
+      - "127.0.0.1:5800:8000"
+    volumes:
+      - /www/wwwroot/gp.tianyuyezi.com_backend/data:/data

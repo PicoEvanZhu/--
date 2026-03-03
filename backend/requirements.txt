@@ -1,0 +1,7 @@
+fastapi==0.116.1
+uvicorn[standard]==0.35.0
+SQLAlchemy==2.0.43
+pydantic-settings==2.10.1
+akshare==1.18.22
+yfinance==0.2.65
+pandas==2.2.3

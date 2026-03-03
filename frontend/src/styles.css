@@ -1,0 +1,167 @@
+:root {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  color: rgba(0, 0, 0, 0.88);
+  background-color: #f5f6f8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  min-height: 100%;
+}
+
+body {
+  overflow: hidden;
+}
+
+.app-shell {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-sider {
+  position: sticky !important;
+  top: 0;
+  height: 100vh;
+  overflow: auto;
+}
+
+.app-main {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.brand-block {
+  height: 56px;
+  margin: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #fff;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.top-header {
+  padding: 0 20px;
+  flex: 0 0 64px;
+  background: #fff;
+  border-bottom: 1px solid #efefef;
+  display: flex;
+  align-items: center;
+}
+
+.top-header-inner {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.app-content {
+  min-height: 0;
+  padding: 20px;
+  overflow: auto;
+}
+
+.auth-page-shell {
+  min-height: calc(100vh - 120px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-page-wrap {
+  width: min(1060px, 100%);
+}
+
+.auth-main-card {
+  border-radius: 14px;
+  box-shadow: 0 10px 32px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+
+.auth-main-left {
+  padding: 28px;
+  min-height: 100%;
+  background: linear-gradient(140deg, #f0f7ff 0%, #f7ffef 100%);
+  border-right: 1px solid #edf1f7;
+}
+
+.auth-main-right {
+  padding: 28px;
+}
+
+.auth-badge {
+  width: fit-content;
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: #1677ff;
+  background: rgba(22, 119, 255, 0.1);
+  font-weight: 600;
+}
+
+.hero-card {
+  background: linear-gradient(125deg, #f0f8ff 0%, #f6ffed 100%);
+}
+
+.feedback-floating-btn {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1100;
+  box-shadow: 0 10px 25px rgba(22, 119, 255, 0.35);
+}
+
+.stock-cart-floating-btn {
+  position: fixed;
+  right: 24px;
+  bottom: 92px;
+  z-index: 1099;
+}
+
+.overview-number {
+  margin-top: 6px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1677ff;
+}
+
+@media (max-width: 768px) {
+  .app-content {
+    padding: 12px;
+  }
+
+  .auth-page-shell {
+    min-height: auto;
+    align-items: flex-start;
+  }
+
+  .auth-main-left,
+  .auth-main-right {
+    padding: 18px;
+  }
+
+  .auth-main-left {
+    border-right: none;
+    border-bottom: 1px solid #edf1f7;
+  }
+
+  .feedback-floating-btn {
+    right: 14px;
+    bottom: 14px;
+  }
+
+  .stock-cart-floating-btn {
+    right: 14px;
+    bottom: 82px;
+  }
+}
