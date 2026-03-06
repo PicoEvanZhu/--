@@ -25,6 +25,8 @@ from app.schemas.stock import (
     PeerCompany,
     ReportDetail,
     ReportListItem,
+    SectorConceptItem,
+    SectorRotationResponse,
     ShareholderRecord,
     StockAnalysis,
     StockDetail,
@@ -45,6 +47,47 @@ logger = logging.getLogger("stock_assistant.stock_service")
 SYNC_COOLDOWN_SECONDS = 4 * 60 * 60
 MIN_UNIVERSE_READY_COUNT = 1200
 MAX_PAGE_SIZE = 200
+
+_CONCEPT_RULES: List[Tuple[str, str]] = [
+    ("算力", "AI算力"),
+    ("人工智能", "AI应用"),
+    ("智能", "AI应用"),
+    ("芯", "半导体"),
+    ("半导体", "半导体"),
+    ("存储", "半导体"),
+    ("光伏", "光伏"),
+    ("风电", "风电"),
+    ("锂", "锂电池"),
+    ("电池", "锂电池"),
+    ("新能源", "新能源车"),
+    ("汽车", "新能源车"),
+    ("机器人", "机器人"),
+    ("自动化", "机器人"),
+    ("军工", "军工"),
+    ("航空", "军工"),
+    ("医药", "创新药"),
+    ("生物", "创新药"),
+    ("医疗", "医疗器械"),
+    ("银行", "银行"),
+    ("证券", "券商"),
+    ("保险", "保险"),
+    ("地产", "地产"),
+    ("有色", "有色金属"),
+    ("铜", "有色金属"),
+    ("黄金", "贵金属"),
+    ("煤", "煤炭"),
+    ("油", "石油石化"),
+    ("天然气", "石油石化"),
+    ("通信", "通信设备"),
+    ("运营商", "通信设备"),
+    ("云", "云计算"),
+    ("软件", "云计算"),
+    ("消费", "消费"),
+    ("食品", "消费"),
+    ("酒", "消费"),
+]
+
+_ROTATION_STAGES = ["修复", "启动", "加速", "分歧", "降温"]
 
 _sync_lock = Lock()
 
@@ -876,12 +919,38 @@ def _build_list_tags(row: StockUniverse, industry: str, score: int, change_pct: 
     return list(dict.fromkeys(tags))[:9]
 
 
+def _detect_concepts(name: str, industry: str, board: str) -> List[str]:
+    haystack = f"{name} {industry} {board}".lower()
+    concepts: List[str] = []
+
+    for keyword, concept in _CONCEPT_RULES:
+        if keyword.lower() in haystack:
+            concepts.append(concept)
+
+    if not concepts:
+        if board == "创业板":
+            concepts.append("成长股")
+        elif board == "科创板":
+            concepts.append("硬科技")
+        elif board == "港股":
+            concepts.append("港股龙头")
+        elif board == "美股":
+            concepts.append("美股科技")
+        else:
+            concepts.append("顺周期")
+
+    return list(dict.fromkeys(concepts))[:4]
+
+
 def _to_stock_item(row: StockUniverse) -> StockItem:
     score = _score_from_universe_row(row)
     price = _market_price(row)
     change_pct = _market_change_pct(row)
     industry = _industry_from_row(row)
+    concepts = _detect_concepts(name=row.name, industry=industry, board=row.board)
     tags = _build_list_tags(row=row, industry=industry, score=score, change_pct=change_pct, price=price)
+    tags.extend([f"概念:{item}" for item in concepts])
+    tags = list(dict.fromkeys(tags))[:12]
 
     return StockItem(
         symbol=row.symbol,
@@ -891,6 +960,7 @@ def _to_stock_item(row: StockUniverse) -> StockItem:
         exchange=row.exchange,
         industry=industry,
         sector=industry,
+        concepts=concepts,
         tags=tags,
         price=price,
         change_pct=change_pct,
@@ -1864,6 +1934,7 @@ def _build_stock_list_stats(items: List[StockItem]) -> StockListStats:
             by_board={},
             by_recommendation={},
             top_industries={},
+            top_concepts={},
             top_tags={},
         )
 
@@ -1876,6 +1947,7 @@ def _build_stock_list_stats(items: List[StockItem]) -> StockListStats:
     board_counter = Counter(item.board for item in items)
     recommendation_counter = Counter(item.recommendation for item in items)
     industry_counter = Counter(item.industry for item in items)
+    concept_counter = Counter(value for item in items for value in item.concepts)
     tag_counter = Counter(tag for item in items for tag in item.tags)
 
     return StockListStats(
@@ -1887,6 +1959,7 @@ def _build_stock_list_stats(items: List[StockItem]) -> StockListStats:
         by_board=_counter_to_sorted_dict(board_counter),
         by_recommendation=_counter_to_sorted_dict(recommendation_counter),
         top_industries=_counter_to_sorted_dict(industry_counter, limit=8),
+        top_concepts=_counter_to_sorted_dict(concept_counter, limit=12),
         top_tags=_counter_to_sorted_dict(tag_counter, limit=12),
     )
 
@@ -1898,6 +1971,7 @@ def get_stock_list(
     board: Optional[str] = None,
     exchange: Optional[str] = None,
     industry: Optional[str] = None,
+    concept: Optional[str] = None,
     tag: Optional[str] = None,
     recommendation: Optional[str] = None,
     score_min: Optional[int] = None,
@@ -1918,6 +1992,7 @@ def get_stock_list(
         items = [item for item in items if item.analyzed == analyzed]
 
     industries = sorted({item.industry for item in items})
+    concepts = sorted({value for item in items for value in item.concepts})
     tags = sorted({value for item in items for value in item.tags})
     boards = sorted({item.board for item in items})
     exchanges = sorted({item.exchange for item in items})
@@ -1941,6 +2016,10 @@ def get_stock_list(
     normalized_industry = _normalize_filter_text(industry)
     if normalized_industry:
         items = [item for item in items if item.industry.lower() == normalized_industry]
+
+    normalized_concept = _normalize_filter_text(concept)
+    if normalized_concept:
+        items = [item for item in items if any(value.lower() == normalized_concept for value in item.concepts)]
 
     normalized_tag = _normalize_filter_text(tag)
     if normalized_tag:
@@ -1983,12 +2062,97 @@ def get_stock_list(
         page=page,
         page_size=page_size,
         industries=industries,
+        concepts=concepts,
         tags=tags,
         boards=boards,
         exchanges=exchanges,
         recommendations=recommendations,
         stats=stats,
         last_synced_at=_serialize_dt(_get_last_synced_at(db)),
+    )
+
+
+def _sector_rotation_stage(avg_change_pct: float, buy_watch_ratio: float, avg_score: float) -> str:
+    if avg_change_pct <= -1.5 and buy_watch_ratio < 0.35:
+        return _ROTATION_STAGES[0]
+    if avg_change_pct > 0 and avg_change_pct <= 1.8 and buy_watch_ratio >= 0.35:
+        return _ROTATION_STAGES[1]
+    if avg_change_pct > 1.8 and buy_watch_ratio >= 0.45 and avg_score >= 60:
+        return _ROTATION_STAGES[2]
+    if avg_change_pct > 0 and avg_change_pct <= 3.5 and avg_score >= 55:
+        return _ROTATION_STAGES[3]
+    return _ROTATION_STAGES[4]
+
+
+def get_sector_rotation_summary(db: Session, market: Optional[str] = None, top_n: int = 8) -> SectorRotationResponse:
+    ensure_stock_universe(db)
+
+    rows = _query_universe_rows(db, market=market)
+    items = [_to_stock_item(row) for row in rows]
+    concept_buckets: Dict[str, List[StockItem]] = {}
+    for item in items:
+        for concept in item.concepts:
+            concept_buckets.setdefault(concept, []).append(item)
+
+    concept_views: List[SectorConceptItem] = []
+    for concept_name, group in concept_buckets.items():
+        stock_count = len(group)
+        if stock_count == 0:
+            continue
+        avg_change_pct = round(sum(value.change_pct for value in group) / stock_count, 2)
+        avg_score = round(sum(value.score for value in group) / stock_count, 1)
+        buy_watch_count = sum(1 for value in group if value.recommendation in {"buy", "watch"})
+        buy_watch_ratio = round(buy_watch_count / stock_count, 3)
+        heat_score = round(
+            max(0.0, min(100.0, 48 + avg_change_pct * 7.2 + (avg_score - 55) * 0.9 + buy_watch_ratio * 36)),
+            1,
+        )
+        leading_symbols = [value.symbol for value in sorted(group, key=lambda row: (row.score, row.change_pct), reverse=True)[:3]]
+        concept_views.append(
+            SectorConceptItem(
+                name=concept_name,
+                stock_count=stock_count,
+                avg_change_pct=avg_change_pct,
+                avg_score=avg_score,
+                buy_watch_ratio=buy_watch_ratio,
+                heat_score=heat_score,
+                leading_symbols=leading_symbols,
+                rotation_stage=_sector_rotation_stage(avg_change_pct=avg_change_pct, buy_watch_ratio=buy_watch_ratio, avg_score=avg_score),
+            )
+        )
+
+    concept_views.sort(key=lambda value: (value.heat_score, value.avg_change_pct, value.avg_score), reverse=True)
+    current_hot = concept_views[: max(1, min(top_n, 15))]
+
+    next_potential: Optional[SectorConceptItem] = None
+    for candidate in concept_views:
+        if candidate.rotation_stage in {"启动", "修复"} and candidate.avg_change_pct >= -0.8 and candidate.buy_watch_ratio >= 0.3:
+            next_potential = candidate
+            break
+    if next_potential is None and concept_views:
+        next_potential = concept_views[min(2, len(concept_views) - 1)]
+
+    rotation_path = [value.name for value in current_hot[:5]]
+    reasoning: List[str] = []
+    risk_warnings: List[str] = []
+    if next_potential is not None:
+        reasoning = [
+            f"{next_potential.name} 当前所处阶段为“{next_potential.rotation_stage}”，具备轮动接力条件。",
+            f"该板块平均评分 {next_potential.avg_score:.1f}，买入/观察占比 {next_potential.buy_watch_ratio * 100:.1f}%，资金偏好开始改善。",
+            f"近段涨跌幅均值 {next_potential.avg_change_pct:+.2f}%，热度评分 {next_potential.heat_score:.1f}，处于可持续观察区间。",
+        ]
+    if current_hot:
+        risk_warnings.append(f"当前最热板块为 {current_hot[0].name}，若连续大涨后量能衰减，可能出现高位分歧。")
+    risk_warnings.append("板块轮动属于概率模型，不构成投资建议，执行上需搭配止损与仓位纪律。")
+
+    return SectorRotationResponse(
+        generated_at=datetime.now(timezone.utc).isoformat(),
+        total_sectors=len(concept_views),
+        current_hot_sectors=current_hot,
+        next_potential_sector=next_potential,
+        rotation_path=rotation_path,
+        reasoning=reasoning,
+        risk_warnings=risk_warnings,
     )
 
 

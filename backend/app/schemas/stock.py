@@ -18,6 +18,7 @@ class StockItem(BaseModel):
     exchange: str
     industry: str
     sector: str
+    concepts: List[str]
     tags: List[str]
     price: float
     change_pct: float
@@ -251,6 +252,7 @@ class StockListStats(BaseModel):
     by_board: Dict[str, int]
     by_recommendation: Dict[str, int]
     top_industries: Dict[str, int]
+    top_concepts: Dict[str, int]
     top_tags: Dict[str, int]
 
 
@@ -260,12 +262,34 @@ class StockListResponse(BaseModel):
     page: int
     page_size: int
     industries: List[str]
+    concepts: List[str]
     tags: List[str]
     boards: List[str]
     exchanges: List[str]
     recommendations: List[RecommendationType]
     stats: StockListStats
     last_synced_at: Optional[str] = None
+
+
+class SectorConceptItem(BaseModel):
+    name: str
+    stock_count: int
+    avg_change_pct: float
+    avg_score: float
+    buy_watch_ratio: float
+    heat_score: float
+    leading_symbols: List[str]
+    rotation_stage: str
+
+
+class SectorRotationResponse(BaseModel):
+    generated_at: str
+    total_sectors: int
+    current_hot_sectors: List[SectorConceptItem]
+    next_potential_sector: Optional[SectorConceptItem] = None
+    rotation_path: List[str]
+    reasoning: List[str]
+    risk_warnings: List[str]
 
 
 class StockSyncResponse(BaseModel):
@@ -326,6 +350,7 @@ class StockQuery(BaseModel):
     board: Optional[str] = None
     exchange: Optional[str] = None
     industry: Optional[str] = None
+    concept: Optional[str] = None
     tag: Optional[str] = None
     recommendation: Optional[RecommendationType] = None
     score_min: Optional[int] = None

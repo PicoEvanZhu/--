@@ -20,8 +20,8 @@ import {
 } from "antd";
 
 import { createMyWatchlistItem } from "../api/account";
-import { listStocks, syncStockUniverse } from "../api/stocks";
-import type { MarketType, RecommendationType, StockItem, StockListStats } from "../types/stock";
+import { getSectorRotation, listStocks, syncStockUniverse } from "../api/stocks";
+import type { MarketType, RecommendationType, SectorRotationResponse, StockItem, StockListStats } from "../types/stock";
 import { isAuthenticated, isGuestMode } from "../utils/auth";
 import { addStockToCart, getStockCartEventName, getStockCartItems } from "../utils/stockCart";
 
@@ -53,6 +53,7 @@ const emptyStats: StockListStats = {
   by_board: {},
   by_recommendation: {},
   top_industries: {},
+  top_concepts: {},
   top_tags: {},
 };
 
@@ -121,6 +122,7 @@ function StocksPage() {
   const initialBoard = searchParams.get("board") ?? undefined;
   const initialExchange = searchParams.get("exchange") ?? undefined;
   const initialIndustry = searchParams.get("industry") ?? undefined;
+  const initialConcept = searchParams.get("concept") ?? undefined;
   const initialTag = searchParams.get("tag") ?? undefined;
   const initialRecommendation = (searchParams.get("recommendation") as RecommendationType | null) ?? undefined;
   const initialScoreMin = parseOptionalNumber(searchParams.get("score_min"));
@@ -137,6 +139,7 @@ function StocksPage() {
   const [board, setBoard] = useState<string | undefined>(initialBoard);
   const [exchange, setExchange] = useState<string | undefined>(initialExchange);
   const [industry, setIndustry] = useState<string | undefined>(initialIndustry);
+  const [concept, setConcept] = useState<string | undefined>(initialConcept);
   const [tag, setTag] = useState<string | undefined>(initialTag);
   const [recommendation, setRecommendation] = useState<RecommendationType | undefined>(initialRecommendation);
   const [scoreMin, setScoreMin] = useState<number | undefined>(initialScoreMin);
@@ -157,11 +160,13 @@ function StocksPage() {
   const [total, setTotal] = useState(0);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const [industryOptions, setIndustryOptions] = useState<string[]>([]);
+  const [conceptOptions, setConceptOptions] = useState<string[]>([]);
   const [tagOptions, setTagOptions] = useState<string[]>([]);
   const [boardOptions, setBoardOptions] = useState<string[]>([]);
   const [exchangeOptions, setExchangeOptions] = useState<string[]>([]);
   const [recommendationOptions, setRecommendationOptions] = useState<RecommendationType[]>([]);
   const [stats, setStats] = useState<StockListStats>(emptyStats);
+  const [sectorRotation, setSectorRotation] = useState<SectorRotationResponse | null>(null);
   const [cartItems, setCartItems] = useState(getStockCartItems());
   const [addingSymbols, setAddingSymbols] = useState<Record<string, boolean>>({});
 
@@ -171,6 +176,7 @@ function StocksPage() {
     board?: string;
     exchange?: string;
     industry?: string;
+    concept?: string;
     tag?: string;
     recommendation?: RecommendationType;
     score_min?: number;
@@ -198,6 +204,9 @@ function StocksPage() {
     }
     if (next.industry?.trim()) {
       params.set("industry", next.industry.trim());
+    }
+    if (next.concept?.trim()) {
+      params.set("concept", next.concept.trim());
     }
     if (next.tag?.trim()) {
       params.set("tag", next.tag.trim());
@@ -235,6 +244,7 @@ function StocksPage() {
     const nextBoard = searchParams.get("board") ?? undefined;
     const nextExchange = searchParams.get("exchange") ?? undefined;
     const nextIndustry = searchParams.get("industry") ?? undefined;
+    const nextConcept = searchParams.get("concept") ?? undefined;
     const nextTag = searchParams.get("tag") ?? undefined;
     const nextRecommendation = (searchParams.get("recommendation") as RecommendationType | null) ?? undefined;
     const nextScoreMin = parseOptionalNumber(searchParams.get("score_min"));
@@ -260,6 +270,9 @@ function StocksPage() {
     }
     if (nextIndustry !== industry) {
       setIndustry(nextIndustry);
+    }
+    if (nextConcept !== concept) {
+      setConcept(nextConcept);
     }
     if (nextTag !== tag) {
       setTag(nextTag);
@@ -307,6 +320,7 @@ function StocksPage() {
         board: board || undefined,
         exchange: exchange || undefined,
         industry: industry || undefined,
+        concept: concept || undefined,
         tag: tag || undefined,
         recommendation,
         score_min: scoreMin,
@@ -323,17 +337,26 @@ function StocksPage() {
       setTotal(response.total);
       setLastSyncedAt(response.last_synced_at ?? null);
       setIndustryOptions(response.industries ?? []);
+      setConceptOptions(response.concepts ?? []);
       setTagOptions(response.tags ?? []);
       setBoardOptions(response.boards ?? []);
       setExchangeOptions(response.exchanges ?? []);
       setRecommendationOptions(response.recommendations ?? []);
       setStats(response.stats ?? emptyStats);
+      try {
+        const rotationResponse = await getSectorRotation(market, 8);
+        setSectorRotation(rotationResponse);
+      } catch {
+        setSectorRotation(null);
+      }
     } catch (err) {
       const messageText = err instanceof Error ? err.message : "加载失败";
       setError(messageText);
       setStocks([]);
       setTotal(0);
       setStats(emptyStats);
+      setConceptOptions([]);
+      setSectorRotation(null);
     } finally {
       setLoading(false);
     }
@@ -346,6 +369,7 @@ function StocksPage() {
       board,
       exchange,
       industry,
+      concept,
       tag,
       recommendation,
       score_min: scoreMin,
@@ -364,6 +388,7 @@ function StocksPage() {
     board,
     exchange,
     industry,
+    concept,
     tag,
     recommendation,
     scoreMin,
@@ -489,6 +514,7 @@ function StocksPage() {
   const isInCart = (symbol: string) => cartItems.some((item) => item.symbol.trim().toUpperCase() === symbol.trim().toUpperCase());
 
   const industrySelectOptions = industryOptions.map((value) => ({ label: value, value }));
+  const conceptSelectOptions = conceptOptions.map((value) => ({ label: value, value }));
   const tagSelectOptions = tagOptions.map((value) => ({ label: value, value }));
   const boardSelectOptions = boardOptions.map((value) => ({ label: value, value }));
   const exchangeSelectOptions = exchangeOptions.map((value) => ({ label: value, value }));
@@ -665,6 +691,20 @@ function StocksPage() {
 
           <Col xs={12} md={4}>
             <Select
+              value={concept}
+              style={{ width: "100%" }}
+              allowClear
+              placeholder="按概念板块"
+              options={conceptSelectOptions}
+              onChange={(value) => {
+                setConcept((value as string | undefined) ?? undefined);
+                setPage(1);
+              }}
+            />
+          </Col>
+
+          <Col xs={12} md={4}>
+            <Select
               value={tag}
               style={{ width: "100%" }}
               allowClear
@@ -770,6 +810,7 @@ function StocksPage() {
                 setBoard(undefined);
                 setExchange(undefined);
                 setIndustry(undefined);
+                setConcept(undefined);
                 setTag(undefined);
                 setRecommendation(undefined);
                 setScoreMin(undefined);
@@ -904,6 +945,24 @@ function StocksPage() {
             )}
           </Space>
 
+          <Text type="secondary">Top 概念板块</Text>
+          <Space wrap>
+            {Object.entries(stats.top_concepts).map(([key, value]) =>
+              renderQuickTag(
+                `concept-${key}`,
+                key,
+                value,
+                concept === key,
+                () => {
+                  setConcept(concept === key ? undefined : key);
+                  setPage(1);
+                },
+                "magenta",
+                "magenta"
+              )
+            )}
+          </Space>
+
           <Text type="secondary">Top 标签</Text>
           <Space wrap>
             {Object.entries(stats.top_tags).map(([key, value]) =>
@@ -920,6 +979,50 @@ function StocksPage() {
             )}
           </Space>
         </Space>
+      </Card>
+
+      <Card title="板块概念轮动分析（模型推理）">
+        {sectorRotation?.next_potential_sector ? (
+          <Space direction="vertical" size={10} style={{ width: "100%" }}>
+            <Text type="secondary">
+              分析时间：{new Date(sectorRotation.generated_at).toLocaleString()}，覆盖概念板块 {sectorRotation.total_sectors} 个
+            </Text>
+            <Alert
+              type="info"
+              showIcon
+              message={`下一潜力板块：${sectorRotation.next_potential_sector.name}（${sectorRotation.next_potential_sector.rotation_stage}）`}
+              description={`热度 ${sectorRotation.next_potential_sector.heat_score} / 平均评分 ${sectorRotation.next_potential_sector.avg_score} / 买入观察占比 ${(sectorRotation.next_potential_sector.buy_watch_ratio * 100).toFixed(1)}%`}
+            />
+            <Space wrap>
+              {sectorRotation.current_hot_sectors.map((item) => (
+                <Tag
+                  key={item.name}
+                  color={item.name === concept ? "magenta" : "processing"}
+                  style={{ cursor: "pointer" }}
+                  onClick={() => {
+                    setConcept(item.name === concept ? undefined : item.name);
+                    setPage(1);
+                  }}
+                >
+                  {item.name} · 热度{item.heat_score}
+                </Tag>
+              ))}
+            </Space>
+            <Text>轮动路径：{sectorRotation.rotation_path.join(" → ") || "暂无"}</Text>
+            {sectorRotation.reasoning.map((line) => (
+              <Text key={line} type="secondary">
+                - {line}
+              </Text>
+            ))}
+            {sectorRotation.risk_warnings.map((line) => (
+              <Text key={line} type="warning">
+                - {line}
+              </Text>
+            ))}
+          </Space>
+        ) : (
+          <Empty description="当前暂无板块轮动分析结果，请先同步股票池后重试" />
+        )}
       </Card>
 
       {error ? <Alert type="error" showIcon message={`股票池加载失败：${error}`} /> : null}
@@ -1027,6 +1130,11 @@ function StocksPage() {
                         <Tag color={stock.analyzed ? "green" : "orange"}>{stock.analyzed ? "已分析" : "未分析"}</Tag>
                         <Tag color={recommendationColor(stock.recommendation)}>{recommendationLabel(stock.recommendation)}</Tag>
                         <Tag color="purple">{stock.industry}</Tag>
+                        {stock.concepts.slice(0, 3).map((itemConcept) => (
+                          <Tag key={`${stock.symbol}-concept-${itemConcept}`} color="magenta" bordered={false}>
+                            {itemConcept}
+                          </Tag>
+                        ))}
                         <Text type="secondary">评分 {stock.score}</Text>
                       </Space>
 

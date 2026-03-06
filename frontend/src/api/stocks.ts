@@ -5,6 +5,7 @@ import type {
   RecommendationType,
   ReportDetail,
   ReportListItem,
+  SectorRotationResponse,
   StockAnalysis,
   StockDetail,
   StockSnapshot,
@@ -24,6 +25,7 @@ interface StockListQuery {
   board?: string;
   exchange?: string;
   industry?: string;
+  concept?: string;
   tag?: string;
   recommendation?: RecommendationType;
   score_min?: number;
@@ -60,6 +62,9 @@ export async function listStocks(query: StockListQuery = {}): Promise<StockListR
   }
   if (query.industry) {
     params.set("industry", query.industry);
+  }
+  if (query.concept) {
+    params.set("concept", query.concept);
   }
   if (query.tag) {
     params.set("tag", query.tag);
@@ -193,6 +198,19 @@ export async function updateStockTradeReview(
 export async function getDashboardSummary(): Promise<DashboardSummary> {
   return request<DashboardSummary>({
     path: "/dashboard/summary",
+    method: "GET",
+  });
+}
+
+export async function getSectorRotation(market?: MarketType, topN = 8): Promise<SectorRotationResponse> {
+  const params = new URLSearchParams();
+  if (market) {
+    params.set("market", market);
+  }
+  params.set("top_n", String(topN));
+
+  return request<SectorRotationResponse>({
+    path: `/stocks/sectors/rotation${params.toString() ? `?${params.toString()}` : ""}`,
     method: "GET",
   });
 }

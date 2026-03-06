@@ -12,6 +12,7 @@ export interface StockItem {
   exchange: string;
   industry: string;
   sector: string;
+  concepts: string[];
   tags: string[];
   price: number;
   change_pct: number;
@@ -254,6 +255,7 @@ export interface StockListStats {
   by_board: Record<string, number>;
   by_recommendation: Record<string, number>;
   top_industries: Record<string, number>;
+  top_concepts: Record<string, number>;
   top_tags: Record<string, number>;
 }
 
@@ -263,12 +265,34 @@ export interface StockListResponse {
   page: number;
   page_size: number;
   industries: string[];
+  concepts: string[];
   tags: string[];
   boards: string[];
   exchanges: string[];
   recommendations: RecommendationType[];
   stats: StockListStats;
   last_synced_at?: string | null;
+}
+
+export interface SectorConceptItem {
+  name: string;
+  stock_count: number;
+  avg_change_pct: number;
+  avg_score: number;
+  buy_watch_ratio: number;
+  heat_score: number;
+  leading_symbols: string[];
+  rotation_stage: string;
+}
+
+export interface SectorRotationResponse {
+  generated_at: string;
+  total_sectors: number;
+  current_hot_sectors: SectorConceptItem[];
+  next_potential_sector?: SectorConceptItem | null;
+  rotation_path: string[];
+  reasoning: string[];
+  risk_warnings: string[];
 }
 
 export interface StockSyncResponse {

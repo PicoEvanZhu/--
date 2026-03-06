@@ -14,6 +14,7 @@ from app.schemas.stock import (
     StockAnalysis,
     StockDetail,
     StockListResponse,
+    SectorRotationResponse,
     StockSnapshot,
     StockSyncResponse,
     StockTradeReviewCreate,
@@ -23,6 +24,7 @@ from app.schemas.stock import (
 )
 from app.services.enrichment_service import enrich_stock_universe, get_enrichment_status
 from app.services.stock_service import (
+    get_sector_rotation_summary,
     get_stock_analysis,
     get_stock_detail,
     get_stock_list,
@@ -41,6 +43,7 @@ def list_stocks(
     board: Optional[str] = Query(default=None),
     exchange: Optional[str] = Query(default=None),
     industry: Optional[str] = Query(default=None),
+    concept: Optional[str] = Query(default=None),
     tag: Optional[str] = Query(default=None),
     recommendation: Optional[RecommendationType] = Query(default=None),
     score_min: Optional[int] = Query(default=None, ge=1, le=99),
@@ -60,6 +63,7 @@ def list_stocks(
         board=board,
         exchange=exchange,
         industry=industry,
+        concept=concept,
         tag=tag,
         recommendation=recommendation,
         score_min=score_min,
@@ -71,6 +75,15 @@ def list_stocks(
         page=page,
         page_size=page_size,
     )
+
+
+@router.get("/sectors/rotation", response_model=SectorRotationResponse)
+def get_sector_rotation_endpoint(
+    market: Optional[MarketType] = Query(default=None),
+    top_n: int = Query(default=8, ge=3, le=15),
+    db: Session = Depends(get_db),
+) -> SectorRotationResponse:
+    return get_sector_rotation_summary(db=db, market=market, top_n=top_n)
 
 
 @router.post("/sync", response_model=StockSyncResponse)
