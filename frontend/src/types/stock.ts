@@ -19,6 +19,26 @@ export interface StockItem {
   analyzed: boolean;
   score: number;
   recommendation: RecommendationType;
+  market_cap?: number | null;
+  pe?: number | null;
+  net_profit?: number | null;
+  revenue?: number | null;
+  revenue_growth?: number | null;
+  revenue_growth_qoq?: number | null;
+  profit_growth?: number | null;
+  profit_growth_qoq?: number | null;
+  gross_margin?: number | null;
+  net_margin?: number | null;
+  roe?: number | null;
+  debt_ratio?: number | null;
+  is_st?: boolean;
+  has_dividend?: boolean;
+  dividend_years?: number;
+  latest_dividend_year?: string | null;
+  dividend_yield?: number | null;
+  ex_dividend_date?: string | null;
+  is_high_dividend?: boolean;
+  is_ex_dividend_soon?: boolean;
   updated_at?: string | null;
 }
 
@@ -68,6 +88,18 @@ export interface PeerCompany {
   comparison_view: string;
 }
 
+export interface StockDataQuality {
+  source: string;
+  price_source: string;
+  fundamentals_source: string;
+  coverage_score: number;
+  reliability_score: number;
+  is_enriched: boolean;
+  updated_at?: string | null;
+  freshness_days?: number | null;
+  warnings: string[];
+}
+
 export interface StockDetail {
   symbol: string;
   name: string;
@@ -108,8 +140,12 @@ export interface StockDetail {
   employees: number;
   main_business: string;
   products_services: string[];
+  industry_positioning: string;
+  business_scope: string[];
+  market_coverage: string[];
   company_intro: string;
   business_tags: string[];
+  company_highlights: string[];
   recent_events: string[];
   core_logic: string[];
   key_risks: string[];
@@ -121,6 +157,7 @@ export interface StockDetail {
   peer_companies: PeerCompany[];
   news_highlights: string[];
   last_report_date: string;
+  data_quality: StockDataQuality;
 }
 
 export interface TradePlan {
@@ -145,6 +182,10 @@ export interface StockAnalysis {
   recommendation: RecommendationType;
   summary: string;
   confidence: number;
+  methodology: string;
+  evidence_points: string[];
+  suitability_note: string;
+  disclaimer: string;
   factor_scores: StockFactorScores;
   strengths: string[];
   risks: string[];
@@ -158,6 +199,54 @@ export interface StockSnapshot {
   symbol: string;
   detail: StockDetail;
   analysis: StockAnalysis;
+}
+
+export type StockQARole = "user" | "assistant";
+
+export interface StockQAMessage {
+  role: StockQARole;
+  content: string;
+}
+
+export interface StockQARequest {
+  question: string;
+  history?: StockQAMessage[];
+}
+
+export interface StockQAResponse {
+  symbol: string;
+  question: string;
+  answer: string;
+  confidence: number;
+  bullets: string[];
+  references: string[];
+  follow_up_questions: string[];
+  disclaimer: string;
+  generated_at: string;
+  search_used?: boolean;
+  search_query?: string | null;
+  search_result_count?: number;
+}
+
+export interface KLinePoint {
+  date: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+export interface StockKLineResponse {
+  symbol: string;
+  period: "1mo" | "3mo" | "6mo" | "1y" | "5y";
+  interval: "1d" | "1h";
+  source: string;
+  points: KLinePoint[];
+  latest_price?: number | null;
+  change_pct?: number | null;
+  is_fallback: boolean;
+  warning?: string | null;
 }
 
 export interface StockTradeReviewItem {
@@ -259,18 +348,29 @@ export interface StockListStats {
   top_tags: Record<string, number>;
 }
 
+export interface StockDividendSummary {
+  total: number;
+  continuous_3y_count: number;
+  high_yield_count: number;
+  upcoming_ex_dividend_count: number;
+  latest_year?: string | null;
+  by_market: Record<string, number>;
+  by_board: Record<string, number>;
+}
+
 export interface StockListResponse {
   items: StockItem[];
   total: number;
   page: number;
   page_size: number;
-  industries: string[];
-  concepts: string[];
-  tags: string[];
-  boards: string[];
-  exchanges: string[];
-  recommendations: RecommendationType[];
-  stats: StockListStats;
+  industries?: string[] | null;
+  concepts?: string[] | null;
+  tags?: string[] | null;
+  boards?: string[] | null;
+  exchanges?: string[] | null;
+  recommendations?: RecommendationType[] | null;
+  stats?: StockListStats | null;
+  dividend_summary?: StockDividendSummary | null;
   last_synced_at?: string | null;
 }
 
@@ -278,15 +378,25 @@ export interface SectorConceptItem {
   name: string;
   stock_count: number;
   avg_change_pct: number;
+  relative_change_pct: number;
   avg_score: number;
   buy_watch_ratio: number;
+  breadth_ratio: number;
+  leader_avg_score: number;
   heat_score: number;
+  confidence: number;
+  is_broad_theme: boolean;
   leading_symbols: string[];
   rotation_stage: string;
+  warnings: string[];
 }
 
 export interface SectorRotationResponse {
   generated_at: string;
+  market_scope: string;
+  benchmark_change_pct: number;
+  methodology: string[];
+  sample_policy: string;
   total_sectors: number;
   current_hot_sectors: SectorConceptItem[];
   next_potential_sector?: SectorConceptItem | null;

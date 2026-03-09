@@ -23,7 +23,8 @@ from app import models as _models  # noqa: E402,F401
 from app.core.database import Base, SessionLocal, engine  # noqa: E402
 from app.models.stock_enrichment import StockEnrichment  # noqa: E402
 from app.models.stock_universe import StockUniverse  # noqa: E402
-from app.services.stock_service import get_stock_analysis, get_stock_detail  # noqa: E402
+from app.services.enrichment_service import merge_stock_detail_with_enrichment, is_placeholder_company_website  # noqa: E402
+from app.services.stock_service import _build_analysis_from_detail, _build_stock_detail_from_row, _decorate_company_profile, get_stock_analysis, get_stock_detail  # noqa: E402
 
 
 REQUIRED_URL_FIELDS = ["company_website", "investor_relations_url", "exchange_profile_url", "quote_url"]
@@ -35,6 +36,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--output-json", default=str(ROOT / ".run" / "verification_summary.json"))
     parser.add_argument("--output-csv", default=str(ROOT / ".run" / "verification_issues.csv"))
+    parser.add_argument("--fast", action="store_true", help="使用数据库快照快速审计，不逐股联网拉实时行情")
     return parser.parse_args()
 
 
@@ -80,9 +82,25 @@ def _validate_symbol(
     if len(detail.company_intro.strip()) < 20:
         issues.append(("warning", "company_intro_too_short"))
 
+    if len(getattr(detail, "industry_positioning", "").strip()) < 12:
+        issues.append(("warning", "industry_positioning_too_short"))
+
+    if len(getattr(detail, "business_scope", []) or []) < 1:
+        issues.append(("warning", "business_scope_missing"))
+
+    if len(getattr(detail, "market_coverage", []) or []) < 1:
+        issues.append(("warning", "market_coverage_missing"))
+
+    if len(getattr(detail, "company_highlights", []) or []) < 1:
+        issues.append(("warning", "company_highlights_missing"))
+
     for field in REQUIRED_URL_FIELDS:
-        if not _is_url(getattr(detail, field, None)):
+        value = getattr(detail, field, None)
+        if not _is_url(value):
             issues.append(("warning", f"url_invalid_{field}"))
+
+    if is_placeholder_company_website(getattr(detail, "company_website", None)):
+        issues.append(("warning", "company_website_placeholder"))
 
     if len(detail.financial_reports) < 3:
         issues.append(("warning", "financial_reports_insufficient"))
@@ -133,6 +151,15 @@ def _validate_symbol(
     return issues
 
 
+def _build_fast_snapshot(row: StockUniverse, enrichment: Optional[StockEnrichment]):
+    detail = _build_stock_detail_from_row(row)
+    if enrichment is not None:
+        detail = merge_stock_detail_with_enrichment(base_detail=detail, enrichment=enrichment)
+    detail = _decorate_company_profile(detail)
+    analysis = _build_analysis_from_detail(detail)
+    return detail, analysis
+
+
 def main() -> int:
     args = parse_args()
 
@@ -164,10 +191,15 @@ def main() -> int:
         scores: List[float] = []
         issue_rows: List[Dict[str, str]] = []
 
+        enrichment_map = {item.symbol: item for item in db.query(StockEnrichment).all()} if args.fast else {}
+
         for row in rows:
-            detail = get_stock_detail(db=db, symbol=row.symbol)
-            analysis = get_stock_analysis(db=db, symbol=row.symbol)
-            enrichment = db.query(StockEnrichment).filter(StockEnrichment.symbol == row.symbol).first()
+            enrichment = enrichment_map.get(row.symbol) if args.fast else db.query(StockEnrichment).filter(StockEnrichment.symbol == row.symbol).first()
+            if args.fast:
+                detail, analysis = _build_fast_snapshot(row=row, enrichment=enrichment)
+            else:
+                detail = get_stock_detail(db=db, symbol=row.symbol)
+                analysis = get_stock_analysis(db=db, symbol=row.symbol)
 
             issues = _validate_symbol(
                 symbol=row.symbol,
@@ -211,6 +243,7 @@ def main() -> int:
         avg_score = round(sum(scores) / len(scores), 2) if scores else 0.0
 
         summary = {
+            "mode": "fast" if args.fast else "live",
             "total": total,
             "passed": passed_count,
             "warning_only": warning_only_count,

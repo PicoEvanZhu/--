@@ -21,6 +21,14 @@ else
 fi
 
 echo
+echo "== database =="
+if [[ -f backend/.env ]]; then
+  grep -E "^DATABASE_URL=" backend/.env || true
+else
+  echo "backend/.env not found（MySQL-only 模式必须提供 DATABASE_URL）"
+fi
+
+echo
 echo "== listeners =="
 lsof -nP -iTCP:"$FRONTEND_PORT" -sTCP:LISTEN || true
 lsof -nP -iTCP:"$BACKEND_PORT" -sTCP:LISTEN || true

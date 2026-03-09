@@ -3,6 +3,7 @@ import logging
 import math
 import re
 import time
+from urllib.parse import urlparse
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar
 
@@ -26,6 +27,7 @@ logger = logging.getLogger("stock_assistant.enrichment_service")
 
 _YF_CALL_GAP_SECONDS = 0.06
 _ENRICH_STALE_SECONDS = 7 * 24 * 60 * 60
+_PLACEHOLDER_WEBSITE_DOMAINS = {"www.cninfo.com.cn", "www.hkex.com.hk", "www.nasdaq.com"}
 
 T = TypeVar("T")
 
@@ -71,15 +73,62 @@ def _safe_int(value: Any) -> Optional[int]:
         return None
 
 
+def _first_non_empty_text(*values: Any) -> Optional[str]:
+    for value in values:
+        text = str(value or "").strip()
+        if text and text.lower() not in {"nan", "none", "null", "--"}:
+            return text
+    return None
+
+
 def _normalize_url(url: Optional[str]) -> Optional[str]:
     if url is None:
         return None
-    text = str(url).strip()
+
+    text = str(url).strip().strip("'\"；;，,")
     if not text:
         return None
-    if text.startswith("http://") or text.startswith("https://"):
-        return text
-    return f"https://{text.lstrip('/')}"
+
+    match = re.search(r'https?://[^\s\'"<>]+', text, flags=re.I)
+    if match:
+        text = match.group(0)
+    else:
+        candidate = re.split(r"[\s,，;；]+", text, maxsplit=1)[0].strip()
+        if candidate.startswith("//"):
+            text = f"https:{candidate}"
+        elif candidate.startswith(("http://", "https://")):
+            text = candidate
+        elif candidate.startswith("www."):
+            text = f"https://{candidate}"
+        elif re.match(r"^[A-Za-z0-9.-]+\.[A-Za-z]{2,}(/.*)?$", candidate):
+            text = f"https://{candidate}"
+        else:
+            return None
+
+    parsed = urlparse(text)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        return None
+    if any(char in parsed.netloc for char in [" ", "<", ">", "\"", "'"]):
+        return None
+    normalized = f"{parsed.scheme}://{parsed.netloc}{parsed.path or ''}"
+    if parsed.query:
+        normalized = f"{normalized}?{parsed.query}"
+    return normalized.rstrip('/')
+
+
+def _frame_first_record_to_dict(frame: Any) -> Dict[str, Any]:
+    if frame is None or getattr(frame, "empty", True):
+        return {}
+    try:
+        record = frame.iloc[0].to_dict()
+    except Exception:
+        return {}
+    output: Dict[str, Any] = {}
+    for key, value in record.items():
+        text = _first_non_empty_text(value)
+        if text is not None:
+            output[str(key).strip()] = text
+    return output
 
 
 def _json_dumps(value: Any) -> str:
@@ -541,31 +590,46 @@ def _build_catalyst_events(info: Dict[str, Any]) -> List[str]:
 
 
 def _extract_akshare_info(row: StockUniverse) -> Dict[str, Any]:
-    if row.market in {"港股", "美股"}:
+    try:
+        import akshare as ak
+    except Exception as exc:
+        logger.debug("akshare import failed for %s: %s", row.symbol, exc)
+        return {}
+
+    output: Dict[str, Any] = {}
+
+    if row.market == "港股":
+        try:
+            hk_profile = ak.stock_hk_company_profile_em(symbol=str(row.code).zfill(5))
+            output.update(_frame_first_record_to_dict(hk_profile))
+        except Exception as exc:
+            logger.debug("akshare hk company profile failed for %s: %s", row.symbol, exc)
+        return output
+
+    if row.market == "美股":
         return {}
 
     try:
-        import akshare as ak
-
-        df = ak.stock_individual_info_em(symbol=row.code)
-        if df is None or df.empty:
-            return {}
-
-        columns = list(df.columns)
-        key_column = columns[0]
-        value_column = columns[1] if len(columns) > 1 else columns[0]
-
-        output: Dict[str, Any] = {}
-        for item in df.to_dict("records"):
-            key = str(item.get(key_column) or "").strip()
-            value = str(item.get(value_column) or "").strip()
-            if key:
-                output[key] = value
-
-        return output
+        cninfo_profile = ak.stock_profile_cninfo(symbol=row.code)
+        output.update(_frame_first_record_to_dict(cninfo_profile))
     except Exception as exc:
-        logger.debug("akshare info failed for %s: %s", row.symbol, exc)
-        return {}
+        logger.debug("akshare cninfo profile failed for %s: %s", row.symbol, exc)
+
+    try:
+        df = ak.stock_individual_info_em(symbol=row.code)
+        if df is not None and not df.empty:
+            columns = list(df.columns)
+            key_column = columns[0]
+            value_column = columns[1] if len(columns) > 1 else columns[0]
+            for item in df.to_dict("records"):
+                key = str(item.get(key_column) or "").strip()
+                value = _first_non_empty_text(item.get(value_column))
+                if key and value is not None and key not in output:
+                    output[key] = value
+    except Exception as exc:
+        logger.debug("akshare stock individual info failed for %s: %s", row.symbol, exc)
+
+    return output
 
 
 def _extract_yfinance_payload(row: StockUniverse) -> Dict[str, Any]:
@@ -678,7 +742,7 @@ def _build_enrichment_payload(row: StockUniverse) -> Dict[str, Any]:
     if not isinstance(info, dict):
         info = {}
 
-    company_name = str(info.get("longName") or info.get("shortName") or "").strip()
+    company_name = _first_non_empty_text(info.get("longName"), info.get("shortName"), ak_info.get("公司名称")) or ""
     if company_name:
         company_full_name = company_name
     elif row.market == "港股":
@@ -687,7 +751,7 @@ def _build_enrichment_payload(row: StockUniverse) -> Dict[str, Any]:
         company_full_name = row.name if row.name.lower().endswith(("inc.", "corp.", "corporation", "plc", "ltd.")) else f"{row.name} Inc."
     else:
         company_full_name = f"{row.name}股份有限公司"
-    english_name = company_name or f"{row.name} Holdings"
+    english_name = _first_non_empty_text(info.get("longName"), info.get("shortName"), ak_info.get("英文名称")) or f"{row.name} Holdings"
 
     listing_date = _parse_date_like(info.get("firstTradeDateEpochUtc"))
     if listing_date and str(listing_date).isdigit() and len(str(listing_date)) >= 10:
@@ -697,11 +761,15 @@ def _build_enrichment_payload(row: StockUniverse) -> Dict[str, Any]:
             listing_date = None
 
     if not listing_date:
-        listing_date = _parse_date_like(ak_info.get("上市时间") or ak_info.get("上市日期"))
+        listing_date = _parse_date_like(_first_non_empty_text(ak_info.get("上市时间"), ak_info.get("上市日期"), ak_info.get("公司成立日期")))
 
-    company_website = _normalize_url(info.get("website"))
-    if not company_website:
-        company_website = _normalize_url(ak_info.get("官网") or ak_info.get("公司网站"))
+    company_website = _normalize_url(_first_non_empty_text(
+        info.get("website"),
+        ak_info.get("官方网站"),
+        ak_info.get("公司网址"),
+        ak_info.get("官网"),
+        ak_info.get("公司网站"),
+    ))
     if not company_website:
         if row.market == "港股":
             company_website = "https://www.hkex.com.hk"
@@ -713,25 +781,30 @@ def _build_enrichment_payload(row: StockUniverse) -> Dict[str, Any]:
     exchange_profile_url = _exchange_profile_url(row.symbol)
     quote_url = _quote_url(row.symbol)
 
-    investor_relations_url = _normalize_url(info.get("irWebsite"))
+    investor_relations_url = _normalize_url(_first_non_empty_text(info.get("irWebsite")))
     if not investor_relations_url:
         if company_website.endswith("/"):
             investor_relations_url = f"{company_website}investor"
         else:
             investor_relations_url = f"{company_website}/investor"
 
-    city = str(info.get("city") or "").strip()
-    country = str(info.get("country") or "").strip()
-    headquarters = "·".join([part for part in [country, city] if part]) if (country or city) else _default_headquarters(row.exchange)
+    city = _first_non_empty_text(info.get("city")) or ""
+    country = _first_non_empty_text(info.get("country")) or ""
+    headquarters = _first_non_empty_text(
+        ak_info.get("办公地址"),
+        ak_info.get("注册地址"),
+        ak_info.get("注册地"),
+        "·".join([part for part in [country, city] if part]) if (country or city) else None,
+    ) or _default_headquarters(row.exchange)
 
-    legal_representative = str(ak_info.get("法人代表") or "").strip() or "未披露"
+    legal_representative = _first_non_empty_text(ak_info.get("法人代表"), ak_info.get("董事长")) or "未披露"
     employees = _safe_int(info.get("fullTimeEmployees")) or _safe_int(ak_info.get("员工人数"))
 
-    long_business_summary = str(info.get("longBusinessSummary") or "").strip()
-    main_business = long_business_summary[:280] if long_business_summary else str(ak_info.get("主营业务") or "").strip()
-    company_intro = long_business_summary[:500] if long_business_summary else f"{row.name} 主要从事相关业务，当前归属于 {row.board} / {row.exchange}。"
+    long_business_summary = _first_non_empty_text(info.get("longBusinessSummary")) or ""
+    main_business = _first_non_empty_text(long_business_summary[:280] if long_business_summary else None, ak_info.get("主营业务"), ak_info.get("经营范围"), ak_info.get("公司介绍")) or f"{row.name} 主要从事相关业务。"
+    company_intro = _first_non_empty_text(long_business_summary[:500] if long_business_summary else None, ak_info.get("机构简介"), ak_info.get("公司介绍"), ak_info.get("经营范围")) or f"{row.name} 主要从事相关业务，当前归属于 {row.board} / {row.exchange}。"
 
-    fallback_industry = str(ak_info.get("行业") or row.board).strip()
+    fallback_industry = _first_non_empty_text(ak_info.get("所属行业"), ak_info.get("行业"), row.board) or row.board
     products_services = _build_products_services(info=info, fallback_industry=fallback_industry)
 
     history = y_payload.get("history") if y_payload else None
@@ -822,6 +895,54 @@ def _build_enrichment_payload(row: StockUniverse) -> Dict[str, Any]:
 
 def get_stock_enrichment(db: Session, symbol: str) -> Optional[StockEnrichment]:
     return db.query(StockEnrichment).filter(StockEnrichment.symbol == symbol).first()
+
+
+def is_placeholder_company_website(url: Optional[str]) -> bool:
+    normalized = _normalize_url(url)
+    if not normalized:
+        return True
+    return urlparse(normalized).netloc.lower() in _PLACEHOLDER_WEBSITE_DOMAINS
+
+
+def build_transient_enrichment_from_row(row: StockUniverse) -> Optional[StockEnrichment]:
+    try:
+        payload = _build_enrichment_payload(row)
+    except Exception as exc:
+        logger.debug("build transient enrichment failed for %s: %s", row.symbol, exc)
+        return None
+
+    if not payload:
+        return None
+
+    return StockEnrichment(
+        symbol=row.symbol,
+        source=payload.get("source") or "mixed_web_sources",
+        status=payload.get("status") or "partial",
+        coverage_score=payload.get("coverage_score"),
+        company_full_name=payload.get("company_full_name"),
+        english_name=payload.get("english_name"),
+        listing_date=payload.get("listing_date"),
+        company_website=payload.get("company_website"),
+        investor_relations_url=payload.get("investor_relations_url"),
+        exchange_profile_url=payload.get("exchange_profile_url"),
+        quote_url=payload.get("quote_url"),
+        headquarters=payload.get("headquarters"),
+        legal_representative=payload.get("legal_representative"),
+        employees=payload.get("employees"),
+        main_business=payload.get("main_business"),
+        company_intro=payload.get("company_intro"),
+        products_services_json=payload.get("products_services_json"),
+        key_risks_json=payload.get("key_risks_json"),
+        catalyst_events_json=payload.get("catalyst_events_json"),
+        news_highlights_json=payload.get("news_highlights_json"),
+        financial_reports_json=payload.get("financial_reports_json"),
+        valuation_history_json=payload.get("valuation_history_json"),
+        dividend_history_json=payload.get("dividend_history_json"),
+        shareholder_structure_json=payload.get("shareholder_structure_json"),
+        peer_companies_json=payload.get("peer_companies_json"),
+        raw_payload_json=payload.get("raw_payload_json"),
+        updated_at=payload.get("updated_at") or _utc_now(),
+    )
 
 
 def enrich_single_stock(

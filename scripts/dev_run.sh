@@ -10,6 +10,20 @@ FRONTEND_PORT="${FRONTEND_PORT:-5173}"
 
 mkdir -p .run
 
+if [[ ! -f backend/.env ]]; then
+  echo "缺少 backend/.env。项目已切换为 MySQL-only，请先配置 DATABASE_URL。"
+  exit 1
+fi
+db_url="$(grep -E '^DATABASE_URL=' backend/.env | head -n 1 | cut -d= -f2- || true)"
+if [[ -z "$db_url" ]]; then
+  echo "backend/.env 未配置 DATABASE_URL。"
+  exit 1
+fi
+if [[ "$db_url" != mysql+pymysql://* ]]; then
+  echo "仅支持 mysql+pymysql:// 连接串，当前为: $db_url"
+  exit 1
+fi
+
 if [[ ! -d backend/.venv ]]; then
   python3 -m venv backend/.venv
 fi

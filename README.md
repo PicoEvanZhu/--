@@ -9,7 +9,7 @@
 技术栈：
 
 - 前端：React + TypeScript + Ant Design
-- 后端：FastAPI + SQLite（可替换 PostgreSQL/MySQL）
+- 后端：FastAPI + MySQL（`mysql+pymysql`）
 
 ## 当前功能
 
@@ -20,10 +20,11 @@
 - 首页保留 Slogan 与快捷入口，仪表板聚合风险与机会
 
 ### 2) 股票池交互优化
-- 支持筛选：`已分析/未分析`、`市场`、`板块`、`交易所`、`行业`、`标签`、`建议动作`、`评分区间`、`涨跌幅区间`、`关键词`
+- 支持筛选：`已分析/未分析`、`市场`、`板块`、`交易所`、`行业`、`概念板块`、`标签`、`建议动作`、`评分区间`、`涨跌幅区间`、`关键词`
 - 支持排序：`评分`、`涨跌幅`、`价格`
 - 提供结果概览：数量、机会标的、平均评分、上涨占比、中位评分
-- 提供量化分布看板：市场/板块/建议动作分布、Top 行业、Top 标签
+- 提供量化分布看板：市场/板块/建议动作分布、Top 行业、Top 概念板块、Top 标签
+- 提供板块轮动分析：样本门槛、广谱概念降权、相对全市场强弱、板块扩散率与下一潜力板块推理
 - 股票池来源升级为交易所全量数据：
   - A股（主板/创业板/科创板/北交所）
   - 港股
@@ -46,6 +47,8 @@
   - 估值历史与分红历史
   - 股东结构、同行对比、新闻舆情要点、催化事件与关键风险
 - 前端详情页展示：
+  - 数据可信度（来源、覆盖率、更新时间、可信度评分、风险提示）
+  - 分析依据与适配提示（方法论、证据点、适合的风险偏好）
   - 行情与估值快照（价格、换手率、振幅、支撑/压力位）
   - 公司画像、研究主线、近期跟踪事件与深度资料看板
   - 五维因子评分、风险提示、交易与监控清单
@@ -86,6 +89,7 @@
 
 ### 股票与仪表板
 - `GET /api/v1/stocks?analyzed=&market=&board=&exchange=&industry=&tag=&recommendation=&score_min=&score_max=&change_pct_min=&change_pct_max=&q=&sort_by=&page=&page_size=`
+- `GET /api/v1/stocks/sectors/rotation?market=&top_n=`
 - `POST /api/v1/stocks/sync?force=`
 - `POST /api/v1/stocks/enrich?force=&market=&limit=&sleep_ms=`
 - `GET /api/v1/stocks/enrich/status`

@@ -53,7 +53,43 @@ require_command screen
 require_command curl
 require_command lsof
 
+ensure_mysql_env() {
+  if [[ ! -f "$ROOT_DIR/backend/.env" ]]; then
+    echo "缺少 backend/.env。项目已切换为 MySQL-only，请先配置 DATABASE_URL。"
+    exit 1
+  fi
+  local db_url
+  db_url="$(grep -E '^DATABASE_URL=' "$ROOT_DIR/backend/.env" | head -n 1 | cut -d= -f2- || true)"
+  if [[ -z "$db_url" ]]; then
+    echo "backend/.env 未配置 DATABASE_URL。"
+    exit 1
+  fi
+  if [[ "$db_url" != mysql+pymysql://* ]]; then
+    echo "仅支持 mysql+pymysql:// 连接串，当前为: $db_url"
+    exit 1
+  fi
+}
+
+ensure_mysql_tunnel() {
+  if [[ ! -f "$ROOT_DIR/backend/.env" ]]; then
+    return
+  fi
+  if ! grep -q '127.0.0.1:13306' "$ROOT_DIR/backend/.env"; then
+    return
+  fi
+  if lsof -nP -iTCP:13306 -sTCP:LISTEN >/dev/null 2>&1; then
+    return
+  fi
+  if [[ ! -f "$HOME/.ssh/pm_ed25519" ]]; then
+    echo "缺少 SSH Key：$HOME/.ssh/pm_ed25519，无法建立 106 MySQL 隧道"
+    exit 1
+  fi
+  ssh -f -N -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3     -L 13306:127.0.0.1:3306 -i "$HOME/.ssh/pm_ed25519" root@106.54.39.43
+}
+
 bash "$ROOT_DIR/scripts/dev_down.sh" >/dev/null 2>&1 || true
+ensure_mysql_env
+ensure_mysql_tunnel
 kill_listener_on_port "$BACKEND_PORT"
 kill_listener_on_port "$FRONTEND_PORT"
 

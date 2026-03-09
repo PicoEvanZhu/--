@@ -1,0 +1,120 @@
+{
+  "mode": "fast",
+  "total": 15557,
+  "passed": 610,
+  "warning_only": 14947,
+  "failed": 0,
+  "detail_missing": 0,
+  "analysis_missing": 0,
+  "avg_quality_score": 94.23,
+  "pass_rate": 3.92,
+  "issue_count_by_severity": {
+    "warning": 29942
+  },
+  "top_issues": [
+    [
+      "company_website_placeholder",
+      14933
+    ],
+    [
+      "enrichment_coverage_low",
+      14925
+    ],
+    [
+      "valuation_history_insufficient",
+      41
+    ],
+    [
+      "support_not_below_resistance",
+      36
+    ],
+    [
+      "enrichment_missing",
+      4
+    ],
+    [
+      "financial_reports_insufficient",
+      3
+    ]
+  ],
+  "market_issue_snapshot": {
+    "港股": [
+      [
+        "company_website_placeholder",
+        2628
+      ],
+      [
+        "enrichment_coverage_low",
+        2628
+      ],
+      [
+        "valuation_history_insufficient",
+        5
+      ],
+      [
+        "financial_reports_insufficient",
+        1
+      ]
+    ],
+    "A股": [
+      [
+        "company_website_placeholder",
+        3448
+      ],
+      [
+        "enrichment_coverage_low",
+        3439
+      ],
+      [
+        "valuation_history_insufficient",
+        8
+      ],
+      [
+        "enrichment_missing",
+        4
+      ]
+    ],
+    "创业板": [
+      [
+        "company_website_placeholder",
+        939
+      ],
+      [
+        "enrichment_coverage_low",
+        939
+      ]
+    ],
+    "科创板": [
+      [
+        "company_website_placeholder",
+        603
+      ],
+      [
+        "enrichment_coverage_low",
+        603
+      ]
+    ],
+    "美股": [
+      [
+        "enrichment_coverage_low",
+        7316
+      ],
+      [
+        "company_website_placeholder",
+        7315
+      ],
+      [
+        "support_not_below_resistance",
+        36
+      ],
+      [
+        "valuation_history_insufficient",
+        28
+      ],
+      [
+        "financial_reports_insufficient",
+        2
+      ]
+    ]
+  }
+}

@@ -1,84 +1,49 @@
 {
-  "total": 8216,
-  "passed": 1621,
-  "warning_only": 6595,
+  "mode": "fast",
+  "total": 200,
+  "passed": 195,
+  "warning_only": 5,
   "failed": 0,
   "detail_missing": 0,
   "analysis_missing": 0,
-  "avg_quality_score": 97.58,
-  "pass_rate": 19.73,
+  "avg_quality_score": 99.89,
+  "pass_rate": 97.5,
   "issue_count_by_severity": {
-    "warning": 6619
+    "warning": 7
   },
   "top_issues": [
     [
-      "enrichment_missing",
-      6293
-    ],
-    [
-      "enrichment_coverage_low",
-      285
-    ],
-    [
-      "support_not_below_resistance",
-      23
-    ],
-    [
-      "valuation_history_insufficient",
-      17
+      "company_website_placeholder",
+      5
     ],
     [
       "financial_reports_insufficient",
+      1
+    ],
+    [
+      "enrichment_coverage_low",
       1
     ]
   ],
   "market_issue_snapshot": {
     "港股": [
       [
-        "enrichment_missing",
-        2303
-      ],
-      [
-        "enrichment_coverage_low",
-        261
-      ],
-      [
-        "support_not_below_resistance",
-        23
+        "company_website_placeholder",
+        1
       ],
       [
         "financial_reports_insufficient",
         1
       ],
       [
-        "valuation_history_insufficient",
+        "enrichment_coverage_low",
         1
       ]
     ],
     "A股": [
       [
-        "enrichment_missing",
-        2449
-      ],
-      [
-        "enrichment_coverage_low",
-        24
-      ],
-      [
-        "valuation_history_insufficient",
-        16
-      ]
-    ],
-    "创业板": [
-      [
-        "enrichment_missing",
-        939
-      ]
-    ],
-    "科创板": [
-      [
-        "enrichment_missing",
-        602
+        "company_website_placeholder",
+        4
       ]
     ]
   }

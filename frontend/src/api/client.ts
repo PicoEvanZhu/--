@@ -1,10 +1,54 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ??
-  (import.meta.env.DEV ? "http://127.0.0.1:8000/api/v1" : "/api/v1");
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL?.trim() || "/api/v1").replace(/\/$/, "");
 
 interface RequestConfig extends RequestInit {
   path: string;
   skipAuth?: boolean;
+}
+
+function normalizeErrorMessage(value: unknown, fallback: string): string {
+  if (typeof value === "string") {
+    const normalized = value.trim();
+    return normalized || fallback;
+  }
+
+  if (Array.isArray(value)) {
+    const parts = value
+      .map((item) => normalizeErrorMessage(item, ""))
+      .map((item) => item.trim())
+      .filter(Boolean);
+    if (parts.length > 0) {
+      return parts.join("；");
+    }
+    return fallback;
+  }
+
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+
+    const msg = record.msg;
+    if (typeof msg === "string" && msg.trim()) {
+      return msg.trim();
+    }
+
+    const candidate = record.detail ?? record.message ?? record.error;
+    if (candidate !== undefined && candidate !== value) {
+      const resolved = normalizeErrorMessage(candidate, "");
+      if (resolved) {
+        return resolved;
+      }
+    }
+
+    try {
+      const serialized = JSON.stringify(value);
+      if (serialized && serialized !== "{}" && serialized !== "null") {
+        return serialized;
+      }
+    } catch {
+      return fallback;
+    }
+  }
+
+  return fallback;
 }
 
 function getAccessToken(): string | null {
@@ -36,8 +80,8 @@ export async function request<T>({ path, headers, skipAuth, ...config }: Request
     let message = `HTTP ${response.status}`;
 
     if (contentType.includes("application/json")) {
-      const body = (await response.json()) as { detail?: string; message?: string };
-      message = body.detail ?? body.message ?? JSON.stringify(body);
+      const body = (await response.json()) as unknown;
+      message = normalizeErrorMessage(body, message);
     } else {
       const text = await response.text();
       message = text || message;

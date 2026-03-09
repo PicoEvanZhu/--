@@ -1,4 +1,5 @@
 import logging
+from threading import Thread
 from time import perf_counter
 
 from fastapi import FastAPI, Request
@@ -7,7 +8,7 @@ from sqlalchemy import inspect, text
 
 from app import models as _models  # noqa: F401
 from app.core.config import get_settings
-from app.core.database import Base, engine
+from app.core.database import Base, SessionLocal, engine
 from app.routers.admin import router as admin_router
 from app.routers.auth import router as auth_router
 from app.routers.dashboard import router as dashboard_router
@@ -15,6 +16,7 @@ from app.routers.feedback import router as feedback_router
 from app.routers.health import router as health_router
 from app.routers.me import router as me_router
 from app.routers.reports import router as reports_router
+from app.services.stock_service import get_sector_rotation_summary, get_stock_list
 from app.routers.stocks import router as stocks_router
 
 settings = get_settings()
@@ -58,13 +60,37 @@ def _apply_runtime_migrations() -> None:
         return
 
     columns = {column["name"] for column in inspector.get_columns("trade_reviews")}
+    indexes = {index["name"] for index in inspector.get_indexes("trade_reviews")}
     with engine.begin() as connection:
         if "user_id" not in columns:
             connection.execute(text("ALTER TABLE trade_reviews ADD COLUMN user_id INTEGER"))
-        connection.execute(text("CREATE INDEX IF NOT EXISTS idx_trade_reviews_user_symbol ON trade_reviews(user_id, symbol)"))
+        if "idx_trade_reviews_user_symbol" not in indexes:
+            connection.execute(text("CREATE INDEX idx_trade_reviews_user_symbol ON trade_reviews(user_id, symbol)"))
 
 
 _apply_runtime_migrations()
+
+
+def _warm_runtime_caches() -> None:
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+
+        db = SessionLocal()
+        try:
+            get_stock_list(db=db, page=1, page_size=20)
+            get_sector_rotation_summary(db=db, top_n=8)
+        finally:
+            db.close()
+        logger.info("runtime caches warmed")
+    except Exception as exc:
+        logger.warning("runtime warmup skipped: %s", exc)
+
+
+@app.on_event("startup")
+def _schedule_runtime_warmup() -> None:
+    Thread(target=_warm_runtime_caches, daemon=True).start()
+
 
 app.include_router(health_router, prefix=settings.api_prefix)
 app.include_router(auth_router, prefix=settings.api_prefix)

@@ -17,7 +17,7 @@ class StockUniverse(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     symbol: Mapped[str] = mapped_column(String(20), unique=True, index=True, nullable=False)
     code: Mapped[str] = mapped_column(String(16), index=True, nullable=False)
-    name: Mapped[str] = mapped_column(String(120), index=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(320), index=True, nullable=False)
     market: Mapped[str] = mapped_column(String(16), index=True, nullable=False)
     board: Mapped[str] = mapped_column(String(32), index=True, nullable=False)
     exchange: Mapped[str] = mapped_column(String(16), index=True, nullable=False)

@@ -21,8 +21,8 @@ class StockEnrichment(Base):
     status: Mapped[str] = mapped_column(String(24), default="success", nullable=False)
     coverage_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
-    company_full_name: Mapped[Optional[str]] = mapped_column(String(240), nullable=True)
-    english_name: Mapped[Optional[str]] = mapped_column(String(240), nullable=True)
+    company_full_name: Mapped[Optional[str]] = mapped_column(String(320), nullable=True)
+    english_name: Mapped[Optional[str]] = mapped_column(String(320), nullable=True)
     listing_date: Mapped[Optional[str]] = mapped_column(String(24), nullable=True)
 
     company_website: Mapped[Optional[str]] = mapped_column(String(320), nullable=True)

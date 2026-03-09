@@ -25,6 +25,26 @@ class StockItem(BaseModel):
     analyzed: bool
     score: int
     recommendation: RecommendationType
+    market_cap: Optional[float] = None
+    pe: Optional[float] = None
+    net_profit: Optional[float] = None
+    revenue: Optional[float] = None
+    revenue_growth: Optional[float] = None
+    revenue_growth_qoq: Optional[float] = None
+    profit_growth: Optional[float] = None
+    profit_growth_qoq: Optional[float] = None
+    gross_margin: Optional[float] = None
+    net_margin: Optional[float] = None
+    roe: Optional[float] = None
+    debt_ratio: Optional[float] = None
+    is_st: bool = False
+    has_dividend: bool = False
+    dividend_years: int = 0
+    latest_dividend_year: Optional[str] = None
+    dividend_yield: Optional[float] = None
+    ex_dividend_date: Optional[str] = None
+    is_high_dividend: bool = False
+    is_ex_dividend_soon: bool = False
     updated_at: Optional[str] = None
 
 
@@ -74,6 +94,18 @@ class PeerCompany(BaseModel):
     comparison_view: str
 
 
+class StockDataQuality(BaseModel):
+    source: str
+    price_source: str
+    fundamentals_source: str
+    coverage_score: float
+    reliability_score: int
+    is_enriched: bool
+    updated_at: Optional[str] = None
+    freshness_days: Optional[int] = None
+    warnings: List[str]
+
+
 class StockDetail(BaseModel):
     symbol: str
     name: str
@@ -114,8 +146,12 @@ class StockDetail(BaseModel):
     employees: int
     main_business: str
     products_services: List[str]
+    industry_positioning: str
+    business_scope: List[str]
+    market_coverage: List[str]
     company_intro: str
     business_tags: List[str]
+    company_highlights: List[str]
     recent_events: List[str]
     core_logic: List[str]
     key_risks: List[str]
@@ -127,6 +163,7 @@ class StockDetail(BaseModel):
     peer_companies: List[PeerCompany]
     news_highlights: List[str]
     last_report_date: str
+    data_quality: StockDataQuality
 
 
 class TradePlan(BaseModel):
@@ -151,6 +188,10 @@ class StockAnalysis(BaseModel):
     recommendation: RecommendationType
     summary: str
     confidence: int
+    methodology: str
+    evidence_points: List[str]
+    suitability_note: str
+    disclaimer: str
     factor_scores: StockFactorScores
     strengths: List[str]
     risks: List[str]
@@ -164,6 +205,31 @@ class StockSnapshot(BaseModel):
     symbol: str
     detail: StockDetail
     analysis: StockAnalysis
+
+
+class StockQAMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=2000)
+
+
+class StockQARequest(BaseModel):
+    question: str = Field(min_length=1, max_length=2000)
+    history: List[StockQAMessage] = Field(default_factory=list, max_length=12)
+
+
+class StockQAResponse(BaseModel):
+    symbol: str
+    question: str
+    answer: str
+    confidence: int = Field(ge=1, le=99)
+    bullets: List[str]
+    references: List[str]
+    follow_up_questions: List[str]
+    disclaimer: str
+    generated_at: str
+    search_used: bool = False
+    search_query: Optional[str] = None
+    search_result_count: int = 0
 
 
 class StockTradeReviewBase(BaseModel):
@@ -256,18 +322,29 @@ class StockListStats(BaseModel):
     top_tags: Dict[str, int]
 
 
+class StockDividendSummary(BaseModel):
+    total: int
+    continuous_3y_count: int
+    high_yield_count: int
+    upcoming_ex_dividend_count: int
+    latest_year: Optional[str] = None
+    by_market: Dict[str, int]
+    by_board: Dict[str, int]
+
+
 class StockListResponse(BaseModel):
     items: List[StockItem]
     total: int
     page: int
     page_size: int
-    industries: List[str]
-    concepts: List[str]
-    tags: List[str]
-    boards: List[str]
-    exchanges: List[str]
-    recommendations: List[RecommendationType]
-    stats: StockListStats
+    industries: Optional[List[str]] = None
+    concepts: Optional[List[str]] = None
+    tags: Optional[List[str]] = None
+    boards: Optional[List[str]] = None
+    exchanges: Optional[List[str]] = None
+    recommendations: Optional[List[RecommendationType]] = None
+    stats: Optional[StockListStats] = None
+    dividend_summary: Optional[StockDividendSummary] = None
     last_synced_at: Optional[str] = None
 
 
@@ -275,21 +352,52 @@ class SectorConceptItem(BaseModel):
     name: str
     stock_count: int
     avg_change_pct: float
+    relative_change_pct: float
     avg_score: float
     buy_watch_ratio: float
+    breadth_ratio: float
+    leader_avg_score: float
     heat_score: float
+    confidence: int
+    is_broad_theme: bool = False
     leading_symbols: List[str]
     rotation_stage: str
+    warnings: List[str]
 
 
 class SectorRotationResponse(BaseModel):
     generated_at: str
+    market_scope: str
+    benchmark_change_pct: float
+    methodology: List[str]
+    sample_policy: str
     total_sectors: int
     current_hot_sectors: List[SectorConceptItem]
     next_potential_sector: Optional[SectorConceptItem] = None
     rotation_path: List[str]
     reasoning: List[str]
     risk_warnings: List[str]
+
+
+class KLinePoint(BaseModel):
+    date: str
+    open: float
+    high: float
+    low: float
+    close: float
+    volume: float
+
+
+class StockKLineResponse(BaseModel):
+    symbol: str
+    period: str
+    interval: str
+    source: str
+    points: List[KLinePoint]
+    latest_price: Optional[float] = None
+    change_pct: Optional[float] = None
+    is_fallback: bool = False
+    warning: Optional[str] = None
 
 
 class StockSyncResponse(BaseModel):
@@ -353,6 +461,22 @@ class StockQuery(BaseModel):
     concept: Optional[str] = None
     tag: Optional[str] = None
     recommendation: Optional[RecommendationType] = None
+    market_cap_min: Optional[float] = None
+    market_cap_max: Optional[float] = None
+    pe_max: Optional[float] = None
+    price_min: Optional[float] = None
+    price_max: Optional[float] = None
+    net_profit_min: Optional[float] = None
+    revenue_min: Optional[float] = None
+    revenue_growth_min: Optional[float] = None
+    revenue_growth_qoq_min: Optional[float] = None
+    profit_growth_min: Optional[float] = None
+    profit_growth_qoq_min: Optional[float] = None
+    gross_margin_min: Optional[float] = None
+    net_margin_min: Optional[float] = None
+    exclude_st: Optional[bool] = None
+    roe_min: Optional[float] = None
+    debt_ratio_max: Optional[float] = None
     score_min: Optional[int] = None
     score_max: Optional[int] = None
     change_pct_min: Optional[float] = None

@@ -1,0 +1,778 @@
+symbol,name,market,severity,issue_code
+00007.HK,WISDOM WEALTH,港股,warning,financial_reports_insufficient
+000505.SZ,京粮控股,A股,warning,company_website_placeholder
+000509.SZ,华塑控股,A股,warning,company_website_placeholder
+000526.SZ,学大教育,A股,warning,company_website_placeholder
+000554.SZ,泰山石油,A股,warning,company_website_placeholder
+000761.SZ,本钢板材,A股,warning,company_website_placeholder
+00100.HK,MINIMAX-WP,港股,warning,valuation_history_insufficient
+001220.SZ,世盟股份,A股,warning,valuation_history_insufficient
+001221.SZ,悍高集团,A股,warning,valuation_history_insufficient
+001233.SZ,海安集团,A股,warning,valuation_history_insufficient
+001258.SZ,立新能源,A股,warning,company_website_placeholder
+001280.SZ,中国铀业,A股,warning,valuation_history_insufficient
+001285.SZ,瑞立科密,A股,warning,valuation_history_insufficient
+001285.SZ,瑞立科密,A股,warning,enrichment_coverage_low
+001325.SZ,元创股份,A股,warning,valuation_history_insufficient
+001335.SZ,信凯科技,A股,warning,valuation_history_insufficient
+001356.SZ,富岭股份,A股,warning,valuation_history_insufficient
+001367.SZ,海森药业,A股,warning,company_website_placeholder
+001367.SZ,海森药业,A股,warning,enrichment_coverage_low
+001368.SZ,通达创智,A股,warning,company_website_placeholder
+001368.SZ,通达创智,A股,warning,enrichment_coverage_low
+001369.SZ,双欣材料,A股,warning,company_website_placeholder
+001369.SZ,双欣材料,A股,warning,enrichment_coverage_low
+00137.HK,JINHUI HOLDINGS,港股,warning,company_website_placeholder
+00137.HK,JINHUI HOLDINGS,港股,warning,enrichment_coverage_low
+001373.SZ,翔腾新材,A股,warning,company_website_placeholder
+001373.SZ,翔腾新材,A股,warning,enrichment_coverage_low
+001376.SZ,百通能源,A股,warning,company_website_placeholder
+001376.SZ,百通能源,A股,warning,enrichment_coverage_low
+001378.SZ,德冠新材,A股,warning,company_website_placeholder
+001378.SZ,德冠新材,A股,warning,enrichment_coverage_low
+001379.SZ,腾达科技,A股,warning,company_website_placeholder
+001379.SZ,腾达科技,A股,warning,enrichment_coverage_low
+00138.HK,CCT FORTIS,港股,warning,company_website_placeholder
+00138.HK,CCT FORTIS,港股,warning,enrichment_coverage_low
+001380.SZ,华纬科技,A股,warning,company_website_placeholder
+001380.SZ,华纬科技,A股,warning,enrichment_coverage_low
+001382.SZ,新亚电缆,A股,warning,company_website_placeholder
+001382.SZ,新亚电缆,A股,warning,enrichment_coverage_low
+001386.SZ,马可波罗,A股,warning,company_website_placeholder
+001386.SZ,马可波罗,A股,warning,enrichment_coverage_low
+001387.SZ,雪祺电气,A股,warning,company_website_placeholder
+001387.SZ,雪祺电气,A股,warning,enrichment_coverage_low
+001388.SZ,信通电子,A股,warning,company_website_placeholder
+001388.SZ,信通电子,A股,warning,enrichment_coverage_low
+001389.SZ,广合科技,A股,warning,company_website_placeholder
+001389.SZ,广合科技,A股,warning,enrichment_coverage_low
+00139.HK,SMART FISH,港股,warning,company_website_placeholder
+00139.HK,SMART FISH,港股,warning,enrichment_coverage_low
+001390.SZ,古麒绒材,A股,warning,company_website_placeholder
+001390.SZ,古麒绒材,A股,warning,enrichment_coverage_low
+001391.SZ,国货航,A股,warning,company_website_placeholder
+001391.SZ,国货航,A股,warning,enrichment_coverage_low
+001395.SZ,亚联机械,A股,warning,company_website_placeholder
+001395.SZ,亚联机械,A股,warning,enrichment_coverage_low
+001396.SZ,誉帆科技,A股,warning,company_website_placeholder
+001396.SZ,誉帆科技,A股,warning,enrichment_coverage_low
+001400.SZ,江顺科技,A股,warning,company_website_placeholder
+001400.SZ,江顺科技,A股,warning,enrichment_coverage_low
+00142.HK,FIRST PACIFIC,港股,warning,company_website_placeholder
+00142.HK,FIRST PACIFIC,港股,warning,enrichment_coverage_low
+00144.HK,CHINA MER PORT,港股,warning,company_website_placeholder
+00144.HK,CHINA MER PORT,港股,warning,enrichment_coverage_low
+00145.HK,CCIAM FUTURE EN,港股,warning,company_website_placeholder
+00145.HK,CCIAM FUTURE EN,港股,warning,enrichment_coverage_low
+00146.HK,TAI PING CARPET,港股,warning,company_website_placeholder
+00146.HK,TAI PING CARPET,港股,warning,enrichment_coverage_low
+00147.HK,IB SETTLEMENT,港股,warning,company_website_placeholder
+00147.HK,IB SETTLEMENT,港股,warning,enrichment_coverage_low
+00148.HK,KINGBOARD HLDG,港股,warning,company_website_placeholder
+00148.HK,KINGBOARD HLDG,港股,warning,enrichment_coverage_low
+00149.HK,CH AGRI-PROD EX,港股,warning,company_website_placeholder
+00149.HK,CH AGRI-PROD EX,港股,warning,enrichment_coverage_low
+00150.HK,HYPEBEAST,港股,warning,company_website_placeholder
+00150.HK,HYPEBEAST,港股,warning,enrichment_coverage_low
+00151.HK,WANT WANT CHINA,港股,warning,company_website_placeholder
+00151.HK,WANT WANT CHINA,港股,warning,enrichment_coverage_low
+00152.HK,SHENZHEN INT'L,港股,warning,company_website_placeholder
+00152.HK,SHENZHEN INT'L,港股,warning,enrichment_coverage_low
+00154.HK,BE ENVIRONMENT,港股,warning,company_website_placeholder
+00154.HK,BE ENVIRONMENT,港股,warning,enrichment_coverage_low
+00156.HK,LIPPO CHINA RES,港股,warning,company_website_placeholder
+00156.HK,LIPPO CHINA RES,港股,warning,enrichment_coverage_low
+00157.HK,NATURAL BEAUTY,港股,warning,company_website_placeholder
+00157.HK,NATURAL BEAUTY,港股,warning,enrichment_coverage_low
+00158.HK,MELBOURNE ENT,港股,warning,company_website_placeholder
+00158.HK,MELBOURNE ENT,港股,warning,enrichment_coverage_low
+00159.HK,BROCKMAN MINING,港股,warning,company_website_placeholder
+00159.HK,BROCKMAN MINING,港股,warning,enrichment_coverage_low
+00160.HK,HON KWOK LAND,港股,warning,company_website_placeholder
+00160.HK,HON KWOK LAND,港股,warning,enrichment_coverage_low
+00162.HK,CENTURY GINWA,港股,warning,company_website_placeholder
+00162.HK,CENTURY GINWA,港股,warning,enrichment_coverage_low
+00163.HK,EMPEROR INT'L,港股,warning,company_website_placeholder
+00163.HK,EMPEROR INT'L,港股,warning,enrichment_coverage_low
+00164.HK,CHINA BAOLI TEC,港股,warning,company_website_placeholder
+00164.HK,CHINA BAOLI TEC,港股,warning,enrichment_coverage_low
+00165.HK,CHINA EB LTD,港股,warning,company_website_placeholder
+00165.HK,CHINA EB LTD,港股,warning,enrichment_coverage_low
+00166.HK,NEW TIMES CORP,港股,warning,company_website_placeholder
+00166.HK,NEW TIMES CORP,港股,warning,enrichment_coverage_low
+00167.HK,IDT INT'L,港股,warning,company_website_placeholder
+00167.HK,IDT INT'L,港股,warning,enrichment_coverage_low
+00168.HK,TSINGTAO BREW,港股,warning,company_website_placeholder
+00168.HK,TSINGTAO BREW,港股,warning,enrichment_coverage_low
+00169.HK,WANDA HOTEL DEV,港股,warning,company_website_placeholder
+00169.HK,WANDA HOTEL DEV,港股,warning,enrichment_coverage_low
+001696.SZ,宗申动力,A股,warning,company_website_placeholder
+001696.SZ,宗申动力,A股,warning,enrichment_coverage_low
+00171.HK,SILVER GRANT,港股,warning,company_website_placeholder
+00171.HK,SILVER GRANT,港股,warning,enrichment_coverage_low
+00173.HK,K. WAH INT'L,港股,warning,company_website_placeholder
+00173.HK,K. WAH INT'L,港股,warning,enrichment_coverage_low
+00174.HK,GEMINI INV,港股,warning,company_website_placeholder
+00174.HK,GEMINI INV,港股,warning,enrichment_coverage_low
+00175.HK,GEELY AUTO,港股,warning,company_website_placeholder
+00175.HK,GEELY AUTO,港股,warning,enrichment_coverage_low
+00176.HK,SUPERACTIVE GP,港股,warning,company_website_placeholder
+00176.HK,SUPERACTIVE GP,港股,warning,enrichment_coverage_low
+00177.HK,JIANGSU EXPRESS,港股,warning,company_website_placeholder
+00177.HK,JIANGSU EXPRESS,港股,warning,enrichment_coverage_low
+00178.HK,SA SA INT'L,港股,warning,company_website_placeholder
+00178.HK,SA SA INT'L,港股,warning,enrichment_coverage_low
+00179.HK,JOHNSON ELEC H,港股,warning,company_website_placeholder
+00179.HK,JOHNSON ELEC H,港股,warning,enrichment_coverage_low
+00180.HK,KADER HOLDINGS,港股,warning,company_website_placeholder
+00180.HK,KADER HOLDINGS,港股,warning,enrichment_coverage_low
+00181.HK,FUJIAN HOLDINGS,港股,warning,company_website_placeholder
+00181.HK,FUJIAN HOLDINGS,港股,warning,enrichment_coverage_low
+00182.HK,CONCORD NE,港股,warning,company_website_placeholder
+00182.HK,CONCORD NE,港股,warning,enrichment_coverage_low
+00183.HK,WINFULL GP,港股,warning,company_website_placeholder
+00183.HK,WINFULL GP,港股,warning,enrichment_coverage_low
+00184.HK,KECK SENG INV,港股,warning,company_website_placeholder
+00184.HK,KECK SENG INV,港股,warning,enrichment_coverage_low
+00185.HK,ZENSUN ENT,港股,warning,company_website_placeholder
+00185.HK,ZENSUN ENT,港股,warning,enrichment_coverage_low
+00186.HK,NIMBLE HOLDINGS,港股,warning,company_website_placeholder
+00186.HK,NIMBLE HOLDINGS,港股,warning,enrichment_coverage_low
+00187.HK,JINGCHENG MAC,港股,warning,company_website_placeholder
+00187.HK,JINGCHENG MAC,港股,warning,enrichment_coverage_low
+001872.SZ,招商港口,A股,warning,company_website_placeholder
+001872.SZ,招商港口,A股,warning,enrichment_coverage_low
+00188.HK,SUNWAH KINGSWAY,港股,warning,company_website_placeholder
+00188.HK,SUNWAH KINGSWAY,港股,warning,enrichment_coverage_low
+00189.HK,DONGYUE GROUP,港股,warning,company_website_placeholder
+00189.HK,DONGYUE GROUP,港股,warning,enrichment_coverage_low
+001896.SZ,豫能控股,A股,warning,company_website_placeholder
+001896.SZ,豫能控股,A股,warning,enrichment_coverage_low
+00191.HK,LAI SUN INT'L,港股,warning,company_website_placeholder
+00191.HK,LAI SUN INT'L,港股,warning,enrichment_coverage_low
+001914.SZ,招商积余,A股,warning,company_website_placeholder
+001914.SZ,招商积余,A股,warning,enrichment_coverage_low
+00193.HK,CAPITAL ESTATE,港股,warning,company_website_placeholder
+00193.HK,CAPITAL ESTATE,港股,warning,enrichment_coverage_low
+00194.HK,LIU CHONG HING,港股,warning,company_website_placeholder
+00194.HK,LIU CHONG HING,港股,warning,enrichment_coverage_low
+00195.HK,GREENTECH INTL,港股,warning,company_website_placeholder
+00195.HK,GREENTECH INTL,港股,warning,enrichment_coverage_low
+00196.HK,HONGHUA GROUP,港股,warning,company_website_placeholder
+00196.HK,HONGHUA GROUP,港股,warning,enrichment_coverage_low
+001965.SZ,招商公路,A股,warning,company_website_placeholder
+001965.SZ,招商公路,A股,warning,enrichment_coverage_low
+00197.HK,HENG TAI,港股,warning,company_website_placeholder
+00197.HK,HENG TAI,港股,warning,enrichment_coverage_low
+001979.SZ,招商蛇口,A股,warning,company_website_placeholder
+001979.SZ,招商蛇口,A股,warning,enrichment_coverage_low
+00199.HK,ITC PROPERTIES,港股,warning,company_website_placeholder
+00199.HK,ITC PROPERTIES,港股,warning,enrichment_coverage_low
+00200.HK,MELCO INT'L DEV,港股,warning,company_website_placeholder
+00200.HK,MELCO INT'L DEV,港股,warning,enrichment_coverage_low
+002001.SZ,新 和 成,A股,warning,company_website_placeholder
+002001.SZ,新 和 成,A股,warning,enrichment_coverage_low
+002003.SZ,伟星股份,A股,warning,company_website_placeholder
+002003.SZ,伟星股份,A股,warning,enrichment_coverage_low
+002004.SZ,华邦健康,A股,warning,company_website_placeholder
+002004.SZ,华邦健康,A股,warning,enrichment_coverage_low
+002005.SZ,ST德豪,A股,warning,company_website_placeholder
+002005.SZ,ST德豪,A股,warning,enrichment_coverage_low
+002006.SZ,精工科技,A股,warning,company_website_placeholder
+002006.SZ,精工科技,A股,warning,enrichment_coverage_low
+002007.SZ,华兰生物,A股,warning,company_website_placeholder
+002007.SZ,华兰生物,A股,warning,enrichment_coverage_low
+002008.SZ,大族激光,A股,warning,company_website_placeholder
+002008.SZ,大族激光,A股,warning,enrichment_coverage_low
+002009.SZ,天奇股份,A股,warning,company_website_placeholder
+002009.SZ,天奇股份,A股,warning,enrichment_coverage_low
+00201.HK,MAGNIFICENT,港股,warning,company_website_placeholder
+00201.HK,MAGNIFICENT,港股,warning,enrichment_coverage_low
+002010.SZ,传化智联,A股,warning,company_website_placeholder
+002010.SZ,传化智联,A股,warning,enrichment_coverage_low
+002011.SZ,盾安环境,A股,warning,company_website_placeholder
+002011.SZ,盾安环境,A股,warning,enrichment_coverage_low
+002012.SZ,凯恩股份,A股,warning,company_website_placeholder
+002012.SZ,凯恩股份,A股,warning,enrichment_coverage_low
+002014.SZ,永新股份,A股,warning,company_website_placeholder
+002014.SZ,永新股份,A股,warning,enrichment_coverage_low
+002015.SZ,协鑫能科,A股,warning,company_website_placeholder
+002015.SZ,协鑫能科,A股,warning,enrichment_coverage_low
+002016.SZ,世荣兆业,A股,warning,company_website_placeholder
+002016.SZ,世荣兆业,A股,warning,enrichment_coverage_low
+002017.SZ,东信和平,A股,warning,company_website_placeholder
+002017.SZ,东信和平,A股,warning,enrichment_coverage_low
+002019.SZ,亿帆医药,A股,warning,company_website_placeholder
+002019.SZ,亿帆医药,A股,warning,enrichment_coverage_low
+00202.HK,EVERCHINA INT'L,港股,warning,company_website_placeholder
+00202.HK,EVERCHINA INT'L,港股,warning,enrichment_coverage_low
+002020.SZ,京新药业,A股,warning,company_website_placeholder
+002020.SZ,京新药业,A股,warning,enrichment_coverage_low
+002021.SZ,中捷资源,A股,warning,company_website_placeholder
+002021.SZ,中捷资源,A股,warning,enrichment_coverage_low
+002022.SZ,科华生物,A股,warning,company_website_placeholder
+002022.SZ,科华生物,A股,warning,enrichment_coverage_low
+002023.SZ,海特高新,A股,warning,company_website_placeholder
+002023.SZ,海特高新,A股,warning,enrichment_coverage_low
+002024.SZ,ST易购,A股,warning,company_website_placeholder
+002024.SZ,ST易购,A股,warning,enrichment_coverage_low
+002025.SZ,航天电器,A股,warning,company_website_placeholder
+002025.SZ,航天电器,A股,warning,enrichment_coverage_low
+002026.SZ,山东威达,A股,warning,company_website_placeholder
+002026.SZ,山东威达,A股,warning,enrichment_coverage_low
+002027.SZ,分众传媒,A股,warning,company_website_placeholder
+002027.SZ,分众传媒,A股,warning,enrichment_coverage_low
+002028.SZ,思源电气,A股,warning,company_website_placeholder
+002028.SZ,思源电气,A股,warning,enrichment_coverage_low
+002029.SZ,七 匹 狼,A股,warning,company_website_placeholder
+002029.SZ,七 匹 狼,A股,warning,enrichment_coverage_low
+002030.SZ,达安基因,A股,warning,company_website_placeholder
+002030.SZ,达安基因,A股,warning,enrichment_coverage_low
+002031.SZ,巨轮智能,A股,warning,company_website_placeholder
+002031.SZ,巨轮智能,A股,warning,enrichment_coverage_low
+002032.SZ,苏 泊 尔,A股,warning,company_website_placeholder
+002032.SZ,苏 泊 尔,A股,warning,enrichment_coverage_low
+002033.SZ,丽江股份,A股,warning,company_website_placeholder
+002033.SZ,丽江股份,A股,warning,enrichment_coverage_low
+002034.SZ,旺能环境,A股,warning,company_website_placeholder
+002034.SZ,旺能环境,A股,warning,enrichment_coverage_low
+002035.SZ,华帝股份,A股,warning,company_website_placeholder
+002035.SZ,华帝股份,A股,warning,enrichment_coverage_low
+002036.SZ,联创电子,A股,warning,company_website_placeholder
+002036.SZ,联创电子,A股,warning,enrichment_coverage_low
+002037.SZ,保利联合,A股,warning,company_website_placeholder
+002037.SZ,保利联合,A股,warning,enrichment_coverage_low
+002038.SZ,双鹭药业,A股,warning,company_website_placeholder
+002038.SZ,双鹭药业,A股,warning,enrichment_coverage_low
+002039.SZ,黔源电力,A股,warning,company_website_placeholder
+002039.SZ,黔源电力,A股,warning,enrichment_coverage_low
+00204.HK,CAPITAL REALM,港股,warning,company_website_placeholder
+00204.HK,CAPITAL REALM,港股,warning,enrichment_coverage_low
+002040.SZ,南 京 港,A股,warning,company_website_placeholder
+002040.SZ,南 京 港,A股,warning,enrichment_coverage_low
+002041.SZ,登海种业,A股,warning,company_website_placeholder
+002041.SZ,登海种业,A股,warning,enrichment_coverage_low
+002042.SZ,华孚时尚,A股,warning,company_website_placeholder
+002042.SZ,华孚时尚,A股,warning,enrichment_coverage_low
+002043.SZ,兔 宝 宝,A股,warning,company_website_placeholder
+002043.SZ,兔 宝 宝,A股,warning,enrichment_coverage_low
+002044.SZ,美年健康,A股,warning,company_website_placeholder
+002044.SZ,美年健康,A股,warning,enrichment_coverage_low
+002045.SZ,国光电器,A股,warning,company_website_placeholder
+002045.SZ,国光电器,A股,warning,enrichment_coverage_low
+002046.SZ,国机精工,A股,warning,company_website_placeholder
+002046.SZ,国机精工,A股,warning,enrichment_coverage_low
+002047.SZ,*ST宝鹰,A股,warning,company_website_placeholder
+002047.SZ,*ST宝鹰,A股,warning,enrichment_coverage_low
+002048.SZ,宁波华翔,A股,warning,company_website_placeholder
+002048.SZ,宁波华翔,A股,warning,enrichment_coverage_low
+002049.SZ,紫光国微,A股,warning,company_website_placeholder
+002049.SZ,紫光国微,A股,warning,enrichment_coverage_low
+00205.HK,BFB HEALTH,港股,warning,company_website_placeholder
+00205.HK,BFB HEALTH,港股,warning,enrichment_coverage_low
+002050.SZ,三花智控,A股,warning,company_website_placeholder
+002050.SZ,三花智控,A股,warning,enrichment_coverage_low
+002051.SZ,中工国际,A股,warning,company_website_placeholder
+002051.SZ,中工国际,A股,warning,enrichment_coverage_low
+002052.SZ,同洲电子,A股,warning,company_website_placeholder
+002052.SZ,同洲电子,A股,warning,enrichment_coverage_low
+002053.SZ,云南能投,A股,warning,company_website_placeholder
+002053.SZ,云南能投,A股,warning,enrichment_coverage_low
+002054.SZ,德美化工,A股,warning,company_website_placeholder
+002054.SZ,德美化工,A股,warning,enrichment_coverage_low
+002055.SZ,ST得润,A股,warning,company_website_placeholder
+002055.SZ,ST得润,A股,warning,enrichment_coverage_low
+002056.SZ,横店东磁,A股,warning,company_website_placeholder
+002056.SZ,横店东磁,A股,warning,enrichment_coverage_low
+002057.SZ,中钢天源,A股,warning,company_website_placeholder
+002057.SZ,中钢天源,A股,warning,enrichment_coverage_low
+002058.SZ,*ST威尔,A股,warning,company_website_placeholder
+002058.SZ,*ST威尔,A股,warning,enrichment_coverage_low
+002059.SZ,云南旅游,A股,warning,company_website_placeholder
+002059.SZ,云南旅游,A股,warning,enrichment_coverage_low
+00206.HK,CM-ENERGY,港股,warning,company_website_placeholder
+00206.HK,CM-ENERGY,港股,warning,enrichment_coverage_low
+002060.SZ,广东建工,A股,warning,company_website_placeholder
+002060.SZ,广东建工,A股,warning,enrichment_coverage_low
+002061.SZ,浙江交科,A股,warning,company_website_placeholder
+002061.SZ,浙江交科,A股,warning,enrichment_coverage_low
+002062.SZ,宏润建设,A股,warning,company_website_placeholder
+002062.SZ,宏润建设,A股,warning,enrichment_coverage_low
+002063.SZ,远光软件,A股,warning,company_website_placeholder
+002063.SZ,远光软件,A股,warning,enrichment_coverage_low
+002064.SZ,华峰化学,A股,warning,company_website_placeholder
+002064.SZ,华峰化学,A股,warning,enrichment_coverage_low
+002065.SZ,东华软件,A股,warning,company_website_placeholder
+002065.SZ,东华软件,A股,warning,enrichment_coverage_low
+002066.SZ,瑞泰科技,A股,warning,company_website_placeholder
+002066.SZ,瑞泰科技,A股,warning,enrichment_coverage_low
+002067.SZ,景兴纸业,A股,warning,company_website_placeholder
+002067.SZ,景兴纸业,A股,warning,enrichment_coverage_low
+002068.SZ,黑猫股份,A股,warning,company_website_placeholder
+002068.SZ,黑猫股份,A股,warning,enrichment_coverage_low
+002069.SZ,獐子岛,A股,warning,company_website_placeholder
+002069.SZ,獐子岛,A股,warning,enrichment_coverage_low
+002072.SZ,凯瑞德,A股,warning,company_website_placeholder
+002072.SZ,凯瑞德,A股,warning,enrichment_coverage_low
+002073.SZ,软控股份,A股,warning,company_website_placeholder
+002073.SZ,软控股份,A股,warning,enrichment_coverage_low
+002074.SZ,国轩高科,A股,warning,company_website_placeholder
+002074.SZ,国轩高科,A股,warning,enrichment_coverage_low
+002075.SZ,沙钢股份,A股,warning,company_website_placeholder
+002075.SZ,沙钢股份,A股,warning,enrichment_coverage_low
+002076.SZ,*ST星光,A股,warning,company_website_placeholder
+002076.SZ,*ST星光,A股,warning,enrichment_coverage_low
+002077.SZ,大港股份,A股,warning,company_website_placeholder
+002077.SZ,大港股份,A股,warning,enrichment_coverage_low
+002078.SZ,太阳纸业,A股,warning,company_website_placeholder
+002078.SZ,太阳纸业,A股,warning,enrichment_coverage_low
+002079.SZ,苏州固锝,A股,warning,company_website_placeholder
+002079.SZ,苏州固锝,A股,warning,enrichment_coverage_low
+002080.SZ,中材科技,A股,warning,company_website_placeholder
+002080.SZ,中材科技,A股,warning,enrichment_coverage_low
+002081.SZ,金 螳 螂,A股,warning,company_website_placeholder
+002081.SZ,金 螳 螂,A股,warning,enrichment_coverage_low
+002082.SZ,万邦德,A股,warning,company_website_placeholder
+002082.SZ,万邦德,A股,warning,enrichment_coverage_low
+002083.SZ,孚日股份,A股,warning,company_website_placeholder
+002083.SZ,孚日股份,A股,warning,enrichment_coverage_low
+002084.SZ,海鸥住工,A股,warning,company_website_placeholder
+002084.SZ,海鸥住工,A股,warning,enrichment_coverage_low
+002085.SZ,万丰奥威,A股,warning,company_website_placeholder
+002085.SZ,万丰奥威,A股,warning,enrichment_coverage_low
+002086.SZ,东方海洋,A股,warning,company_website_placeholder
+002086.SZ,东方海洋,A股,warning,enrichment_coverage_low
+002088.SZ,鲁阳节能,A股,warning,company_website_placeholder
+002088.SZ,鲁阳节能,A股,warning,enrichment_coverage_low
+00209.HK,WINSHINE SCI,港股,warning,company_website_placeholder
+00209.HK,WINSHINE SCI,港股,warning,enrichment_coverage_low
+002090.SZ,金智科技,A股,warning,company_website_placeholder
+002090.SZ,金智科技,A股,warning,enrichment_coverage_low
+002091.SZ,江苏国泰,A股,warning,company_website_placeholder
+002091.SZ,江苏国泰,A股,warning,enrichment_coverage_low
+002092.SZ,中泰化学,A股,warning,company_website_placeholder
+002092.SZ,中泰化学,A股,warning,enrichment_coverage_low
+002093.SZ,国脉科技,A股,warning,company_website_placeholder
+002093.SZ,国脉科技,A股,warning,enrichment_coverage_low
+002094.SZ,青岛金王,A股,warning,company_website_placeholder
+002094.SZ,青岛金王,A股,warning,enrichment_coverage_low
+002095.SZ,生 意 宝,A股,warning,company_website_placeholder
+002095.SZ,生 意 宝,A股,warning,enrichment_coverage_low
+002096.SZ,易普力,A股,warning,company_website_placeholder
+002096.SZ,易普力,A股,warning,enrichment_coverage_low
+002097.SZ,山河智能,A股,warning,company_website_placeholder
+002097.SZ,山河智能,A股,warning,enrichment_coverage_low
+002098.SZ,浔兴股份,A股,warning,company_website_placeholder
+002098.SZ,浔兴股份,A股,warning,enrichment_coverage_low
+002099.SZ,海翔药业,A股,warning,company_website_placeholder
+002099.SZ,海翔药业,A股,warning,enrichment_coverage_low
+00210.HK,DAPHNE INT'L,港股,warning,company_website_placeholder
+00210.HK,DAPHNE INT'L,港股,warning,enrichment_coverage_low
+002100.SZ,天康生物,A股,warning,company_website_placeholder
+002100.SZ,天康生物,A股,warning,enrichment_coverage_low
+002101.SZ,广东鸿图,A股,warning,company_website_placeholder
+002101.SZ,广东鸿图,A股,warning,enrichment_coverage_low
+002102.SZ,能特科技,A股,warning,company_website_placeholder
+002102.SZ,能特科技,A股,warning,enrichment_coverage_low
+002103.SZ,广博股份,A股,warning,company_website_placeholder
+002103.SZ,广博股份,A股,warning,enrichment_coverage_low
+002104.SZ,恒宝股份,A股,warning,company_website_placeholder
+002104.SZ,恒宝股份,A股,warning,enrichment_coverage_low
+002105.SZ,信隆健康,A股,warning,company_website_placeholder
+002105.SZ,信隆健康,A股,warning,enrichment_coverage_low
+002106.SZ,莱宝高科,A股,warning,company_website_placeholder
+002106.SZ,莱宝高科,A股,warning,enrichment_coverage_low
+002107.SZ,沃华医药,A股,warning,company_website_placeholder
+002107.SZ,沃华医药,A股,warning,enrichment_coverage_low
+002108.SZ,沧州明珠,A股,warning,company_website_placeholder
+002108.SZ,沧州明珠,A股,warning,enrichment_coverage_low
+002109.SZ,兴化股份,A股,warning,company_website_placeholder
+002109.SZ,兴化股份,A股,warning,enrichment_coverage_low
+00211.HK,STYLAND HOLD,港股,warning,company_website_placeholder
+00211.HK,STYLAND HOLD,港股,warning,enrichment_coverage_low
+002110.SZ,三钢闽光,A股,warning,company_website_placeholder
+002110.SZ,三钢闽光,A股,warning,enrichment_coverage_low
+002111.SZ,威海广泰,A股,warning,company_website_placeholder
+002111.SZ,威海广泰,A股,warning,enrichment_coverage_low
+002112.SZ,三变科技,A股,warning,company_website_placeholder
+002112.SZ,三变科技,A股,warning,enrichment_coverage_low
+002114.SZ,罗平锌电,A股,warning,company_website_placeholder
+002114.SZ,罗平锌电,A股,warning,enrichment_coverage_low
+002115.SZ,三维通信,A股,warning,company_website_placeholder
+002115.SZ,三维通信,A股,warning,enrichment_coverage_low
+002116.SZ,中国海诚,A股,warning,company_website_placeholder
+002116.SZ,中国海诚,A股,warning,enrichment_coverage_low
+002117.SZ,东港股份,A股,warning,company_website_placeholder
+002117.SZ,东港股份,A股,warning,enrichment_coverage_low
+002119.SZ,康强电子,A股,warning,company_website_placeholder
+002119.SZ,康强电子,A股,warning,enrichment_coverage_low
+00212.HK,NANYANG HOLD,港股,warning,company_website_placeholder
+00212.HK,NANYANG HOLD,港股,warning,enrichment_coverage_low
+002120.SZ,韵达股份,A股,warning,company_website_placeholder
+002120.SZ,韵达股份,A股,warning,enrichment_coverage_low
+002121.SZ,科陆电子,A股,warning,company_website_placeholder
+002121.SZ,科陆电子,A股,warning,enrichment_coverage_low
+002122.SZ,ST汇洲,A股,warning,company_website_placeholder
+002122.SZ,ST汇洲,A股,warning,enrichment_coverage_low
+002123.SZ,梦网科技,A股,warning,company_website_placeholder
+002123.SZ,梦网科技,A股,warning,enrichment_coverage_low
+002124.SZ,天邦食品,A股,warning,company_website_placeholder
+002124.SZ,天邦食品,A股,warning,enrichment_coverage_low
+002125.SZ,湘潭电化,A股,warning,company_website_placeholder
+002125.SZ,湘潭电化,A股,warning,enrichment_coverage_low
+002126.SZ,银轮股份,A股,warning,company_website_placeholder
+002126.SZ,银轮股份,A股,warning,enrichment_coverage_low
+002127.SZ,南极电商,A股,warning,company_website_placeholder
+002127.SZ,南极电商,A股,warning,enrichment_coverage_low
+002128.SZ,电投能源,A股,warning,company_website_placeholder
+002128.SZ,电投能源,A股,warning,enrichment_coverage_low
+002129.SZ,TCL中环,A股,warning,company_website_placeholder
+002129.SZ,TCL中环,A股,warning,enrichment_coverage_low
+00213.HK,NATIONAL ELEC H,港股,warning,company_website_placeholder
+00213.HK,NATIONAL ELEC H,港股,warning,enrichment_coverage_low
+002130.SZ,沃尔核材,A股,warning,company_website_placeholder
+002130.SZ,沃尔核材,A股,warning,enrichment_coverage_low
+002131.SZ,利欧股份,A股,warning,company_website_placeholder
+002131.SZ,利欧股份,A股,warning,enrichment_coverage_low
+002132.SZ,恒星科技,A股,warning,company_website_placeholder
+002132.SZ,恒星科技,A股,warning,enrichment_coverage_low
+002133.SZ,广宇集团,A股,warning,company_website_placeholder
+002133.SZ,广宇集团,A股,warning,enrichment_coverage_low
+002134.SZ,天津普林,A股,warning,company_website_placeholder
+002134.SZ,天津普林,A股,warning,enrichment_coverage_low
+002135.SZ,东南网架,A股,warning,company_website_placeholder
+002135.SZ,东南网架,A股,warning,enrichment_coverage_low
+002136.SZ,安 纳 达,A股,warning,company_website_placeholder
+002136.SZ,安 纳 达,A股,warning,enrichment_coverage_low
+002137.SZ,实益达,A股,warning,company_website_placeholder
+002137.SZ,实益达,A股,warning,enrichment_coverage_low
+002138.SZ,顺络电子,A股,warning,company_website_placeholder
+002138.SZ,顺络电子,A股,warning,enrichment_coverage_low
+002139.SZ,拓邦股份,A股,warning,company_website_placeholder
+002139.SZ,拓邦股份,A股,warning,enrichment_coverage_low
+00214.HK,ASIA ORIENT,港股,warning,company_website_placeholder
+00214.HK,ASIA ORIENT,港股,warning,enrichment_coverage_low
+002140.SZ,东华科技,A股,warning,company_website_placeholder
+002140.SZ,东华科技,A股,warning,enrichment_coverage_low
+002141.SZ,贤丰控股,A股,warning,company_website_placeholder
+002141.SZ,贤丰控股,A股,warning,enrichment_coverage_low
+002142.SZ,宁波银行,A股,warning,company_website_placeholder
+002142.SZ,宁波银行,A股,warning,enrichment_coverage_low
+002144.SZ,宏达高科,A股,warning,company_website_placeholder
+002144.SZ,宏达高科,A股,warning,enrichment_coverage_low
+002145.SZ,钛能化学,A股,warning,company_website_placeholder
+002145.SZ,钛能化学,A股,warning,enrichment_coverage_low
+002146.SZ,荣盛发展,A股,warning,company_website_placeholder
+002146.SZ,荣盛发展,A股,warning,enrichment_coverage_low
+002148.SZ,北纬科技,A股,warning,company_website_placeholder
+002148.SZ,北纬科技,A股,warning,enrichment_coverage_low
+002149.SZ,西部材料,A股,warning,company_website_placeholder
+002149.SZ,西部材料,A股,warning,enrichment_coverage_low
+00215.HK,HUTCHTEL HK,港股,warning,company_website_placeholder
+00215.HK,HUTCHTEL HK,港股,warning,enrichment_coverage_low
+002150.SZ,正泰电源,A股,warning,company_website_placeholder
+002150.SZ,正泰电源,A股,warning,enrichment_coverage_low
+002151.SZ,北斗星通,A股,warning,company_website_placeholder
+002151.SZ,北斗星通,A股,warning,enrichment_coverage_low
+002152.SZ,广电运通,A股,warning,company_website_placeholder
+002152.SZ,广电运通,A股,warning,enrichment_coverage_low
+002153.SZ,石基信息,A股,warning,company_website_placeholder
+002153.SZ,石基信息,A股,warning,enrichment_coverage_low
+002154.SZ,报 喜 鸟,A股,warning,company_website_placeholder
+002154.SZ,报 喜 鸟,A股,warning,enrichment_coverage_low
+002155.SZ,湖南黄金,A股,warning,company_website_placeholder
+002155.SZ,湖南黄金,A股,warning,enrichment_coverage_low
+002156.SZ,通富微电,A股,warning,company_website_placeholder
+002156.SZ,通富微电,A股,warning,enrichment_coverage_low
+002157.SZ,正邦科技,A股,warning,company_website_placeholder
+002157.SZ,正邦科技,A股,warning,enrichment_coverage_low
+002158.SZ,汉钟精机,A股,warning,company_website_placeholder
+002158.SZ,汉钟精机,A股,warning,enrichment_coverage_low
+002159.SZ,三特索道,A股,warning,company_website_placeholder
+002159.SZ,三特索道,A股,warning,enrichment_coverage_low
+00216.HK,CHINNEY INV,港股,warning,company_website_placeholder
+00216.HK,CHINNEY INV,港股,warning,enrichment_coverage_low
+002160.SZ,常铝股份,A股,warning,company_website_placeholder
+002160.SZ,常铝股份,A股,warning,enrichment_coverage_low
+002161.SZ,远 望 谷,A股,warning,company_website_placeholder
+002161.SZ,远 望 谷,A股,warning,enrichment_coverage_low
+002162.SZ,悦心健康,A股,warning,company_website_placeholder
+002162.SZ,悦心健康,A股,warning,enrichment_coverage_low
+002163.SZ,海南发展,A股,warning,company_website_placeholder
+002163.SZ,海南发展,A股,warning,enrichment_coverage_low
+002164.SZ,宁波东力,A股,warning,company_website_placeholder
+002164.SZ,宁波东力,A股,warning,enrichment_coverage_low
+002165.SZ,红 宝 丽,A股,warning,company_website_placeholder
+002165.SZ,红 宝 丽,A股,warning,enrichment_coverage_low
+002166.SZ,莱茵生物,A股,warning,company_website_placeholder
+002166.SZ,莱茵生物,A股,warning,enrichment_coverage_low
+002167.SZ,东方锆业,A股,warning,company_website_placeholder
+002167.SZ,东方锆业,A股,warning,enrichment_coverage_low
+002168.SZ,*ST惠程,A股,warning,company_website_placeholder
+002168.SZ,*ST惠程,A股,warning,enrichment_coverage_low
+002169.SZ,智光电气,A股,warning,company_website_placeholder
+002169.SZ,智光电气,A股,warning,enrichment_coverage_low
+00217.HK,CHINA CHENGTONG,港股,warning,company_website_placeholder
+00217.HK,CHINA CHENGTONG,港股,warning,enrichment_coverage_low
+002170.SZ,芭田股份,A股,warning,company_website_placeholder
+002170.SZ,芭田股份,A股,warning,enrichment_coverage_low
+002171.SZ,楚江新材,A股,warning,company_website_placeholder
+002171.SZ,楚江新材,A股,warning,enrichment_coverage_low
+002172.SZ,澳洋健康,A股,warning,company_website_placeholder
+002172.SZ,澳洋健康,A股,warning,enrichment_coverage_low
+002173.SZ,创新医疗,A股,warning,company_website_placeholder
+002173.SZ,创新医疗,A股,warning,enrichment_coverage_low
+002174.SZ,游族网络,A股,warning,company_website_placeholder
+002174.SZ,游族网络,A股,warning,enrichment_coverage_low
+002175.SZ,东方智造,A股,warning,company_website_placeholder
+002175.SZ,东方智造,A股,warning,enrichment_coverage_low
+002176.SZ,江特电机,A股,warning,company_website_placeholder
+002176.SZ,江特电机,A股,warning,enrichment_coverage_low
+002177.SZ,御银股份,A股,warning,company_website_placeholder
+002177.SZ,御银股份,A股,warning,enrichment_coverage_low
+002178.SZ,延华智能,A股,warning,company_website_placeholder
+002178.SZ,延华智能,A股,warning,enrichment_coverage_low
+002179.SZ,中航光电,A股,warning,company_website_placeholder
+002179.SZ,中航光电,A股,warning,enrichment_coverage_low
+00218.HK,SWHYHK,港股,warning,company_website_placeholder
+00218.HK,SWHYHK,港股,warning,enrichment_coverage_low
+002180.SZ,纳思达,A股,warning,company_website_placeholder
+002180.SZ,纳思达,A股,warning,enrichment_coverage_low
+002181.SZ,粤 传 媒,A股,warning,company_website_placeholder
+002181.SZ,粤 传 媒,A股,warning,enrichment_coverage_low
+002182.SZ,宝武镁业,A股,warning,company_website_placeholder
+002182.SZ,宝武镁业,A股,warning,enrichment_coverage_low
+002183.SZ,怡 亚 通,A股,warning,company_website_placeholder
+002183.SZ,怡 亚 通,A股,warning,enrichment_coverage_low
+002184.SZ,海得控制,A股,warning,company_website_placeholder
+002184.SZ,海得控制,A股,warning,enrichment_coverage_low
+002185.SZ,华天科技,A股,warning,company_website_placeholder
+002185.SZ,华天科技,A股,warning,enrichment_coverage_low
+002186.SZ,全 聚 德,A股,warning,company_website_placeholder
+002186.SZ,全 聚 德,A股,warning,enrichment_coverage_low
+002187.SZ,广百股份,A股,warning,company_website_placeholder
+002187.SZ,广百股份,A股,warning,enrichment_coverage_low
+002188.SZ,中天服务,A股,warning,company_website_placeholder
+002188.SZ,中天服务,A股,warning,enrichment_coverage_low
+002189.SZ,中光学,A股,warning,company_website_placeholder
+002189.SZ,中光学,A股,warning,enrichment_coverage_low
+00219.HK,SHUNHO PROPERTY,港股,warning,company_website_placeholder
+00219.HK,SHUNHO PROPERTY,港股,warning,enrichment_coverage_low
+002190.SZ,成飞集成,A股,warning,company_website_placeholder
+002190.SZ,成飞集成,A股,warning,enrichment_coverage_low
+002191.SZ,劲嘉股份,A股,warning,company_website_placeholder
+002191.SZ,劲嘉股份,A股,warning,enrichment_coverage_low
+002192.SZ,融捷股份,A股,warning,company_website_placeholder
+002192.SZ,融捷股份,A股,warning,enrichment_coverage_low
+002193.SZ,如意集团,A股,warning,company_website_placeholder
+002193.SZ,如意集团,A股,warning,enrichment_coverage_low
+002194.SZ,武汉凡谷,A股,warning,company_website_placeholder
+002194.SZ,武汉凡谷,A股,warning,enrichment_coverage_low
+002195.SZ,岩山科技,A股,warning,company_website_placeholder
+002195.SZ,岩山科技,A股,warning,enrichment_coverage_low
+002196.SZ,方正电机,A股,warning,company_website_placeholder
+002196.SZ,方正电机,A股,warning,enrichment_coverage_low
+002197.SZ,证通电子,A股,warning,company_website_placeholder
+002197.SZ,证通电子,A股,warning,enrichment_coverage_low
+002198.SZ,嘉应制药,A股,warning,company_website_placeholder
+002198.SZ,嘉应制药,A股,warning,enrichment_coverage_low
+002199.SZ,*ST东晶,A股,warning,company_website_placeholder
+002199.SZ,*ST东晶,A股,warning,enrichment_coverage_low
+00220.HK,U-PRESID CHINA,港股,warning,company_website_placeholder
+00220.HK,U-PRESID CHINA,港股,warning,enrichment_coverage_low
+002200.SZ,*ST交投,A股,warning,company_website_placeholder
+002200.SZ,*ST交投,A股,warning,enrichment_coverage_low
+002201.SZ,九鼎新材,A股,warning,company_website_placeholder
+002201.SZ,九鼎新材,A股,warning,enrichment_coverage_low
+002202.SZ,金风科技,A股,warning,company_website_placeholder
+002202.SZ,金风科技,A股,warning,enrichment_coverage_low
+002203.SZ,海亮股份,A股,warning,company_website_placeholder
+002203.SZ,海亮股份,A股,warning,enrichment_coverage_low
+002204.SZ,大连重工,A股,warning,company_website_placeholder
+002204.SZ,大连重工,A股,warning,enrichment_coverage_low
+002205.SZ,国统股份,A股,warning,company_website_placeholder
+002205.SZ,国统股份,A股,warning,enrichment_coverage_low
+002206.SZ,海 利 得,A股,warning,company_website_placeholder
+002206.SZ,海 利 得,A股,warning,enrichment_coverage_low
+002207.SZ,准油股份,A股,warning,company_website_placeholder
+002207.SZ,准油股份,A股,warning,enrichment_coverage_low
+002208.SZ,合肥城建,A股,warning,company_website_placeholder
+002208.SZ,合肥城建,A股,warning,enrichment_coverage_low
+002209.SZ,达 意 隆,A股,warning,company_website_placeholder
+002209.SZ,达 意 隆,A股,warning,enrichment_coverage_low
+002210.SZ,飞马国际,A股,warning,company_website_placeholder
+002210.SZ,飞马国际,A股,warning,enrichment_coverage_low
+002211.SZ,ST宏达,A股,warning,company_website_placeholder
+002211.SZ,ST宏达,A股,warning,enrichment_coverage_low
+002212.SZ,天融信,A股,warning,company_website_placeholder
+002212.SZ,天融信,A股,warning,enrichment_coverage_low
+002213.SZ,大为股份,A股,warning,company_website_placeholder
+002213.SZ,大为股份,A股,warning,enrichment_coverage_low
+002214.SZ,*ST大立,A股,warning,company_website_placeholder
+002214.SZ,*ST大立,A股,warning,enrichment_coverage_low
+002215.SZ,诺 普 信,A股,warning,company_website_placeholder
+002215.SZ,诺 普 信,A股,warning,enrichment_coverage_low
+002216.SZ,三全食品,A股,warning,company_website_placeholder
+002216.SZ,三全食品,A股,warning,enrichment_coverage_low
+002217.SZ,合力泰,A股,warning,company_website_placeholder
+002217.SZ,合力泰,A股,warning,enrichment_coverage_low
+002218.SZ,拓日新能,A股,warning,company_website_placeholder
+002218.SZ,拓日新能,A股,warning,enrichment_coverage_low
+002219.SZ,新里程,A股,warning,company_website_placeholder
+002219.SZ,新里程,A股,warning,enrichment_coverage_low
+00222.HK,MIN XIN HOLD,港股,warning,company_website_placeholder
+00222.HK,MIN XIN HOLD,港股,warning,enrichment_coverage_low
+002221.SZ,东华能源,A股,warning,company_website_placeholder
+002221.SZ,东华能源,A股,warning,enrichment_coverage_low
+002222.SZ,福晶科技,A股,warning,company_website_placeholder
+002222.SZ,福晶科技,A股,warning,enrichment_coverage_low
+002223.SZ,鱼跃医疗,A股,warning,company_website_placeholder
+002223.SZ,鱼跃医疗,A股,warning,enrichment_coverage_low
+002224.SZ,三 力 士,A股,warning,company_website_placeholder
+002224.SZ,三 力 士,A股,warning,enrichment_coverage_low
+002225.SZ,濮耐股份,A股,warning,company_website_placeholder
+002225.SZ,濮耐股份,A股,warning,enrichment_coverage_low
+002226.SZ,江南化工,A股,warning,company_website_placeholder
+002226.SZ,江南化工,A股,warning,enrichment_coverage_low
+002227.SZ,奥 特 迅,A股,warning,company_website_placeholder
+002227.SZ,奥 特 迅,A股,warning,enrichment_coverage_low
+002228.SZ,合兴包装,A股,warning,company_website_placeholder
+002228.SZ,合兴包装,A股,warning,enrichment_coverage_low
+002229.SZ,鸿博股份,A股,warning,company_website_placeholder
+002229.SZ,鸿博股份,A股,warning,enrichment_coverage_low
+00223.HK,ELIFE HLDGS,港股,warning,company_website_placeholder
+00223.HK,ELIFE HLDGS,港股,warning,enrichment_coverage_low
+002230.SZ,科大讯飞,A股,warning,company_website_placeholder
+002230.SZ,科大讯飞,A股,warning,enrichment_coverage_low
+002231.SZ,*ST奥维,A股,warning,company_website_placeholder
+002231.SZ,*ST奥维,A股,warning,enrichment_coverage_low
+002232.SZ,启明信息,A股,warning,company_website_placeholder
+002232.SZ,启明信息,A股,warning,enrichment_coverage_low
+002233.SZ,塔牌集团,A股,warning,company_website_placeholder
+002233.SZ,塔牌集团,A股,warning,enrichment_coverage_low
+002234.SZ,民和股份,A股,warning,company_website_placeholder
+002234.SZ,民和股份,A股,warning,enrichment_coverage_low
+002235.SZ,安妮股份,A股,warning,company_website_placeholder
+002235.SZ,安妮股份,A股,warning,enrichment_coverage_low
+002236.SZ,大华股份,A股,warning,company_website_placeholder
+002236.SZ,大华股份,A股,warning,enrichment_coverage_low
+002237.SZ,恒邦股份,A股,warning,company_website_placeholder
+002237.SZ,恒邦股份,A股,warning,enrichment_coverage_low
+002238.SZ,天威视讯,A股,warning,company_website_placeholder
+002238.SZ,天威视讯,A股,warning,enrichment_coverage_low
+002239.SZ,奥特佳,A股,warning,company_website_placeholder
+002239.SZ,奥特佳,A股,warning,enrichment_coverage_low
+00224.HK,PIONEER GLOBAL,港股,warning,company_website_placeholder
+00224.HK,PIONEER GLOBAL,港股,warning,enrichment_coverage_low
+002240.SZ,盛新锂能,A股,warning,company_website_placeholder
+002240.SZ,盛新锂能,A股,warning,enrichment_coverage_low
+002241.SZ,歌尔股份,A股,warning,company_website_placeholder
+002241.SZ,歌尔股份,A股,warning,enrichment_coverage_low
+002242.SZ,九阳股份,A股,warning,company_website_placeholder
+002242.SZ,九阳股份,A股,warning,enrichment_coverage_low
+002243.SZ,力合科创,A股,warning,company_website_placeholder
+002243.SZ,力合科创,A股,warning,enrichment_coverage_low
+002244.SZ,滨江集团,A股,warning,company_website_placeholder
+002244.SZ,滨江集团,A股,warning,enrichment_coverage_low
+002245.SZ,蔚蓝锂芯,A股,warning,company_website_placeholder
+002245.SZ,蔚蓝锂芯,A股,warning,enrichment_coverage_low
+002246.SZ,北化股份,A股,warning,company_website_placeholder
+002246.SZ,北化股份,A股,warning,enrichment_coverage_low
+002247.SZ,聚力文化,A股,warning,company_website_placeholder
+002247.SZ,聚力文化,A股,warning,enrichment_coverage_low
+002248.SZ,华东数控,A股,warning,company_website_placeholder
+002248.SZ,华东数控,A股,warning,enrichment_coverage_low
+002249.SZ,大洋电机,A股,warning,company_website_placeholder
+002249.SZ,大洋电机,A股,warning,enrichment_coverage_low
+00225.HK,POKFULAM,港股,warning,company_website_placeholder
+00225.HK,POKFULAM,港股,warning,enrichment_coverage_low
+002250.SZ,联化科技,A股,warning,company_website_placeholder
+002250.SZ,联化科技,A股,warning,enrichment_coverage_low
+002251.SZ,步步高,A股,warning,company_website_placeholder
+002251.SZ,步步高,A股,warning,enrichment_coverage_low
+002252.SZ,上海莱士,A股,warning,company_website_placeholder
+002252.SZ,上海莱士,A股,warning,enrichment_coverage_low
+002253.SZ,*ST智胜,A股,warning,company_website_placeholder
+002253.SZ,*ST智胜,A股,warning,enrichment_coverage_low
+002254.SZ,泰和新材,A股,warning,company_website_placeholder
+002254.SZ,泰和新材,A股,warning,enrichment_coverage_low
+002255.SZ,海陆重工,A股,warning,company_website_placeholder
+002255.SZ,海陆重工,A股,warning,enrichment_coverage_low
+002256.SZ,兆新股份,A股,warning,company_website_placeholder
+002256.SZ,兆新股份,A股,warning,enrichment_coverage_low
+002258.SZ,利尔化学,A股,warning,company_website_placeholder
+002258.SZ,利尔化学,A股,warning,enrichment_coverage_low
+002259.SZ,升达林业,A股,warning,company_website_placeholder
+002259.SZ,升达林业,A股,warning,enrichment_coverage_low
+002261.SZ,拓维信息,A股,warning,company_website_placeholder
+002261.SZ,拓维信息,A股,warning,enrichment_coverage_low
+002262.SZ,恩华药业,A股,warning,company_website_placeholder
+002262.SZ,恩华药业,A股,warning,enrichment_coverage_low
+002263.SZ,大东南,A股,warning,company_website_placeholder
+002263.SZ,大东南,A股,warning,enrichment_coverage_low
+002264.SZ,新 华 都,A股,warning,company_website_placeholder
+002264.SZ,新 华 都,A股,warning,enrichment_coverage_low
+002265.SZ,建设工业,A股,warning,company_website_placeholder
+002265.SZ,建设工业,A股,warning,enrichment_coverage_low
+002266.SZ,浙富控股,A股,warning,company_website_placeholder
+002266.SZ,浙富控股,A股,warning,enrichment_coverage_low
+002267.SZ,陕天然气,A股,warning,company_website_placeholder
+002267.SZ,陕天然气,A股,warning,enrichment_coverage_low
+002268.SZ,电科网安,A股,warning,company_website_placeholder
+002268.SZ,电科网安,A股,warning,enrichment_coverage_low
+002269.SZ,美邦服饰,A股,warning,company_website_placeholder
+002269.SZ,美邦服饰,A股,warning,enrichment_coverage_low
+00227.HK,FIRST SHANGHAI,港股,warning,company_website_placeholder
+00227.HK,FIRST SHANGHAI,港股,warning,enrichment_coverage_low
+002270.SZ,华明装备,A股,warning,company_website_placeholder
+002270.SZ,华明装备,A股,warning,enrichment_coverage_low
+002271.SZ,东方雨虹,A股,warning,company_website_placeholder
+002271.SZ,东方雨虹,A股,warning,enrichment_coverage_low
+002272.SZ,川润股份,A股,warning,company_website_placeholder
+002272.SZ,川润股份,A股,warning,enrichment_coverage_low
+002273.SZ,水晶光电,A股,warning,company_website_placeholder
+002273.SZ,水晶光电,A股,warning,enrichment_coverage_low
+002274.SZ,华昌化工,A股,warning,company_website_placeholder
+002274.SZ,华昌化工,A股,warning,enrichment_coverage_low
+002275.SZ,桂林三金,A股,warning,company_website_placeholder
+002275.SZ,桂林三金,A股,warning,enrichment_coverage_low
+002276.SZ,万马股份,A股,warning,company_website_placeholder
+002276.SZ,万马股份,A股,warning,enrichment_coverage_low
+002277.SZ,友阿股份,A股,warning,company_website_placeholder
+002277.SZ,友阿股份,A股,warning,enrichment_coverage_low
+002278.SZ,神开股份,A股,warning,company_website_placeholder
+002278.SZ,神开股份,A股,warning,enrichment_coverage_low
+002279.SZ,久其软件,A股,warning,company_website_placeholder
+002279.SZ,久其软件,A股,warning,enrichment_coverage_low
+00228.HK,CHINA ENERGY,港股,warning,company_website_placeholder
+00228.HK,CHINA ENERGY,港股,warning,enrichment_coverage_low
+002281.SZ,光迅科技,A股,warning,company_website_placeholder
+002281.SZ,光迅科技,A股,warning,enrichment_coverage_low
+002282.SZ,博深股份,A股,warning,company_website_placeholder
+002282.SZ,博深股份,A股,warning,enrichment_coverage_low
+002283.SZ,天润工业,A股,warning,company_website_placeholder
+002283.SZ,天润工业,A股,warning,enrichment_coverage_low
+002284.SZ,亚太股份,A股,warning,company_website_placeholder
+002284.SZ,亚太股份,A股,warning,enrichment_coverage_low
+002285.SZ,世联行,A股,warning,company_website_placeholder
+002285.SZ,世联行,A股,warning,enrichment_coverage_low
+002286.SZ,保龄宝,A股,warning,company_website_placeholder
+002286.SZ,保龄宝,A股,warning,enrichment_coverage_low
+002287.SZ,奇正藏药,A股,warning,company_website_placeholder
+002287.SZ,奇正藏药,A股,warning,enrichment_coverage_low
+002289.SZ,*ST宇顺,A股,warning,company_website_placeholder
+002289.SZ,*ST宇顺,A股,warning,enrichment_coverage_low
+00229.HK,RAYMOND IND,港股,warning,company_website_placeholder
+00229.HK,RAYMOND IND,港股,warning,enrichment_coverage_low
+002290.SZ,禾盛新材,A股,warning,company_website_placeholder
+002290.SZ,禾盛新材,A股,warning,enrichment_coverage_low
+002291.SZ,遥望科技,A股,warning,company_website_placeholder
+002291.SZ,遥望科技,A股,warning,enrichment_coverage_low
+002292.SZ,奥飞娱乐,A股,warning,company_website_placeholder
+002292.SZ,奥飞娱乐,A股,warning,enrichment_coverage_low
+002293.SZ,罗莱生活,A股,warning,company_website_placeholder
+002293.SZ,罗莱生活,A股,warning,enrichment_coverage_low
+002294.SZ,信立泰,A股,warning,company_website_placeholder
+002294.SZ,信立泰,A股,warning,enrichment_coverage_low
+002295.SZ,精艺股份,A股,warning,company_website_placeholder
+002295.SZ,精艺股份,A股,warning,enrichment_coverage_low

@@ -1,0 +1,66 @@
+{
+  "mode": "fast",
+  "total": 1000,
+  "passed": 604,
+  "warning_only": 396,
+  "failed": 0,
+  "detail_missing": 0,
+  "analysis_missing": 0,
+  "avg_quality_score": 97.67,
+  "pass_rate": 60.4,
+  "issue_count_by_severity": {
+    "warning": 777
+  },
+  "top_issues": [
+    [
+      "company_website_placeholder",
+      386
+    ],
+    [
+      "enrichment_coverage_low",
+      381
+    ],
+    [
+      "valuation_history_insufficient",
+      9
+    ],
+    [
+      "financial_reports_insufficient",
+      1
+    ]
+  ],
+  "market_issue_snapshot": {
+    "港股": [
+      [
+        "company_website_placeholder",
+        77
+      ],
+      [
+        "enrichment_coverage_low",
+        77
+      ],
+      [
+        "financial_reports_insufficient",
+        1
+      ],
+      [
+        "valuation_history_insufficient",
+        1
+      ]
+    ],
+    "A股": [
+      [
+        "company_website_placeholder",
+        309
+      ],
+      [
+        "enrichment_coverage_low",
+        304
+      ],
+      [
+        "valuation_history_insufficient",
+        8
+      ]
+    ]
+  }
+}

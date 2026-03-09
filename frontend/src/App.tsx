@@ -149,7 +149,37 @@ function App() {
     <Layout className="app-shell">
       {!isAuthRoute ? (
         <Sider className="app-sider" width={230} breakpoint="lg" collapsedWidth={70}>
-          <div className="brand-block">Stock Assistant</div>
+          <div
+            className="brand-block"
+            role="button"
+            tabIndex={0}
+            onClick={() => navigate("/home")}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                navigate("/home");
+              }
+            }}
+          >
+            <div className="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 48 48" className="brand-mark-svg">
+                <defs>
+                  <linearGradient id="brandMarkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#5cc8ff" />
+                    <stop offset="100%" stopColor="#1677ff" />
+                  </linearGradient>
+                </defs>
+                <rect x="4" y="4" width="40" height="40" rx="12" fill="url(#brandMarkGradient)" />
+                <path d="M14 31L21 24L27 27L35 17" fill="none" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M31 17H35V21" fill="none" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M14 36H34" fill="none" stroke="rgba(255,255,255,0.42)" strokeWidth="2.4" strokeLinecap="round" />
+              </svg>
+            </div>
+            <div className="brand-text">
+              <div className="brand-title">股票助手</div>
+              <div className="brand-subtitle">Stock Assistant</div>
+            </div>
+          </div>
           <Menu
             theme="dark"
             mode="inline"

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Alert,
@@ -8,6 +8,7 @@ import {
   Col,
   Descriptions,
   Divider,
+  Empty,
   Form,
   Input,
   InputNumber,
@@ -24,12 +25,14 @@ import {
   Typography,
 } from "antd";
 
-import { createStockTradeReview, getStockSnapshot, getStockTradeReviews, updateStockTradeReview } from "../api/stocks";
+import { askStockQuestion, createStockTradeReview, getStockKLine, getStockSnapshot, getStockTradeReviews, updateStockTradeReview } from "../api/stocks";
+import StockKLineChart from "../components/StockKLineChart";
 import { createGuestTradeReview, getGuestTradeReviews, updateGuestTradeReview } from "../services/guestData";
 import type {
   DividendRecord,
   FollowUpStatus,
   FinancialReport,
+  StockKLineResponse,
   PeerCompany,
   RecommendationType,
   RiskLevel,
@@ -37,6 +40,7 @@ import type {
   StockAnalysis,
   StockDetail,
   StockTradeReviewResponse,
+  StockQAMessage,
   TradeReviewAction,
   ValuationHistoryPoint,
 } from "../types/stock";
@@ -61,7 +65,22 @@ interface TradeReviewFormValues {
   discipline_score?: number;
 }
 
+interface QAChatItem {
+  role: "user" | "assistant";
+  content: string;
+  confidence?: number;
+  bullets?: string[];
+  references?: string[];
+  followUpQuestions?: string[];
+  disclaimer?: string;
+  searchUsed?: boolean;
+  searchQuery?: string | null;
+  searchResultCount?: number;
+}
+
 type DetailTabKey = "analysis" | "follow_up";
+type KLinePeriod = "1mo" | "3mo" | "6mo" | "1y" | "5y";
+type KLineInterval = "1d" | "1h";
 
 function recommendationLabel(recommendation: RecommendationType): string {
   if (recommendation === "buy") {
@@ -109,6 +128,13 @@ function riskColor(level: RiskLevel): string {
   return "red";
 }
 
+function isAbortError(error: unknown): boolean {
+  if (error instanceof DOMException) {
+    return error.name === "AbortError";
+  }
+  return error instanceof Error && error.name === "AbortError";
+}
+
 function scoreColor(score: number): string {
   if (score >= 75) {
     return "#389e0d";
@@ -128,6 +154,11 @@ function signedPercent(value: number): string {
 
 function toYi(value: number): string {
   return `${value.toLocaleString("zh-CN", { maximumFractionDigits: 1 })} 亿`;
+}
+
+function yuanToYi(value: number): string {
+  const amountYi = (Number.isFinite(value) ? value : 0) / 100000000;
+  return `${amountYi.toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 亿`;
 }
 
 function factorColor(score: number): string {
@@ -189,6 +220,31 @@ function followUpStatusColor(status: FollowUpStatus): string {
   return "green";
 }
 
+function extractYearNumber(value: string): number | null {
+  const matched = value.match(/(19|20)\d{2}/);
+  if (!matched) {
+    return null;
+  }
+
+  const parsed = Number(matched[0]);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function buildDividendObservationWindow(exDividendDate?: string | null): string {
+  if (!exDividendDate) {
+    return "重点跟踪年报、董事会预案、股东大会与实施公告。";
+  }
+
+  const parsed = new Date(exDividendDate);
+  if (Number.isNaN(parsed.getTime())) {
+    return "重点跟踪年报、董事会预案、股东大会与实施公告。";
+  }
+
+  const month = parsed.getMonth() + 1;
+  const forwardMonth = Math.max(1, month - 2);
+  return `通常可在 ${forwardMonth}-${month} 月提前跟踪预案、审议与实施节奏。`;
+}
+
 function StockDetailPage() {
   const { symbol = "" } = useParams<{ symbol: string }>();
   const navigate = useNavigate();
@@ -196,6 +252,8 @@ function StockDetailPage() {
   const [searchParams] = useSearchParams();
   const { message } = AntdApp.useApp();
   const [tradeReviewForm] = Form.useForm<TradeReviewFormValues>();
+  const [klinePeriod, setKlinePeriod] = useState<KLinePeriod>("6mo");
+  const [klineInterval, setKlineInterval] = useState<KLineInterval>("1d");
   const [authed, setAuthed] = useState(hasSessionAccess());
   const [guestMode, setGuestMode] = useState(isGuestMode());
 
@@ -205,9 +263,19 @@ function StockDetailPage() {
   const [analysis, setAnalysis] = useState<StockAnalysis | null>(null);
   const [tradeReviews, setTradeReviews] = useState<StockTradeReviewResponse | null>(null);
   const [tradeReviewLoading, setTradeReviewLoading] = useState(false);
+  const [klineLoading, setKlineLoading] = useState(false);
+  const [klineError, setKlineError] = useState<string | null>(null);
+  const [klineData, setKlineData] = useState<StockKLineResponse | null>(null);
   const [tradeReviewSubmitting, setTradeReviewSubmitting] = useState(false);
   const [tradeReviewError, setTradeReviewError] = useState<string | null>(null);
   const [detailActiveTab, setDetailActiveTab] = useState<DetailTabKey>("analysis");
+  const [qaQuestionInput, setQaQuestionInput] = useState("");
+  const [qaComposing, setQaComposing] = useState(false);
+  const [qaLoading, setQaLoading] = useState(false);
+  const [qaError, setQaError] = useState<string | null>(null);
+  const [qaMessages, setQaMessages] = useState<QAChatItem[]>([]);
+  const qaRequestIdRef = useRef(0);
+  const qaAbortRef = useRef<AbortController | null>(null);
 
   const today = new Date().toISOString().slice(0, 10);
   const detailSource = searchParams.get("source");
@@ -221,6 +289,30 @@ function StockDetailPage() {
       return;
     }
     navigate(fromPath ?? fallbackBackPath);
+  };
+
+  const loadKLine = async (targetSymbol: string, period: KLinePeriod, interval: KLineInterval, isMounted?: () => boolean) => {
+    setKlineLoading(true);
+    setKlineError(null);
+
+    try {
+      const response = await getStockKLine(targetSymbol, period, interval);
+      if (isMounted && !isMounted()) {
+        return;
+      }
+      setKlineData(response);
+    } catch (err) {
+      if (isMounted && !isMounted()) {
+        return;
+      }
+      const messageText = err instanceof Error ? err.message : "K线加载失败";
+      setKlineError(messageText);
+      setKlineData(null);
+    } finally {
+      if (!isMounted || isMounted()) {
+        setKlineLoading(false);
+      }
+    }
   };
 
   const loadTradeReviews = async (targetSymbol: string, isMounted?: () => boolean) => {
@@ -293,6 +385,19 @@ function StockDetailPage() {
 
     if (symbol) {
       setDetailActiveTab("analysis");
+      setKlinePeriod("6mo");
+      setKlineInterval("1d");
+      qaAbortRef.current?.abort();
+      setQaQuestionInput("");
+      setQaComposing(false);
+      setQaLoading(false);
+      setQaError(null);
+      setQaMessages([
+        {
+          role: "assistant",
+          content: "你可以问我估值、风险、买卖计划、分红、财报等问题，我会基于当前股票详情数据给出回答。",
+        },
+      ]);
       void run();
       tradeReviewForm.setFieldsValue({
         trade_date: today,
@@ -303,8 +408,48 @@ function StockDetailPage() {
 
     return () => {
       mounted = false;
+      qaAbortRef.current?.abort();
     };
   }, [symbol]);
+
+  useEffect(() => {
+    let mounted = true;
+    if (!symbol) {
+      return () => {
+        mounted = false;
+      };
+    }
+
+    void loadKLine(symbol, klinePeriod, klineInterval, () => mounted);
+    return () => {
+      mounted = false;
+    };
+  }, [symbol, klinePeriod, klineInterval]);
+
+  useEffect(() => {
+    if (!symbol) {
+      return undefined;
+    }
+
+    const timerId = window.setInterval(() => {
+      if (document.hidden) {
+        return;
+      }
+      void getStockKLine(symbol, klinePeriod, klineInterval)
+        .then((response) => {
+          setKlineData(response);
+          setKlineError(null);
+        })
+        .catch((err) => {
+          const messageText = err instanceof Error ? err.message : "K线刷新失败";
+          setKlineError(messageText);
+        });
+    }, 15000);
+
+    return () => {
+      window.clearInterval(timerId);
+    };
+  }, [symbol, klinePeriod, klineInterval]);
 
   useEffect(() => {
     let mounted = true;
@@ -351,10 +496,144 @@ function StockDetailPage() {
   );
 
   const score = analysis?.score ?? 0;
+  const qaQuickQuestions = useMemo(
+    () => [
+      `${detail?.name ?? "这只股票"}现在估值高吗？`,
+      `${detail?.name ?? "这只股票"}最大的风险点是什么？`,
+      "如果我分批建仓，止损和仓位怎么设置？",
+      `${detail?.name ?? "这只股票"}分红质量怎么样？`,
+    ],
+    [detail?.name]
+  );
   const showOwnerColumn = useMemo(
     () => Boolean(tradeReviews?.items.some((item) => Boolean(item.owner_username))),
     [tradeReviews]
   );
+
+  const klineSummary = useMemo(() => {
+    const points = klineData?.points ?? [];
+    if (!points.length) {
+      return null;
+    }
+    const latest = points[points.length - 1];
+    const highest = Math.max(...points.map((item) => item.high));
+    const lowest = Math.min(...points.map((item) => item.low));
+    const avgTurnover = points.reduce((sum, item) => sum + item.volume, 0) / points.length;
+    return {
+      latest,
+      highest,
+      lowest,
+      avgTurnover,
+      samples: points.length,
+    };
+  }, [klineData]);
+
+  const klineSourceLabel = useMemo(() => {
+    const source = klineData?.source ?? "";
+    if (!source) {
+      return "未知";
+    }
+    if (source.startsWith("tencent:")) {
+      return "腾讯行情";
+    }
+    if (source.startsWith("akshare:")) {
+      return "AkShare/东方财富";
+    }
+    if (source.startsWith("yfinance:")) {
+      return "Yahoo Finance";
+    }
+    if (source === "synthetic_fallback") {
+      return "备用估算";
+    }
+    return source;
+  }, [klineData]);
+
+  const klineAdjustmentLabel = useMemo(() => {
+    const source = klineData?.source ?? "";
+    if (source.includes(":qfq")) {
+      return "前复权";
+    }
+    if (source === "synthetic_fallback") {
+      return "估算";
+    }
+    return "原始";
+  }, [klineData]);
+
+  const dividendAnalysis = useMemo(() => {
+    if (!detail) {
+      return null;
+    }
+
+    const records = [...detail.dividend_history]
+      .filter((item) => item.cash_dividend_per_share > 0)
+      .sort((left, right) => {
+        const leftYear = extractYearNumber(left.year) ?? 0;
+        const rightYear = extractYearNumber(right.year) ?? 0;
+        return rightYear - leftYear;
+      });
+
+    if (records.length === 0) {
+      return null;
+    }
+
+    const latest = records[0];
+    const count = records.length;
+    const avgCashDividend = records.reduce((sum, item) => sum + item.cash_dividend_per_share, 0) / count;
+    const avgPayoutRatio = records.reduce((sum, item) => sum + item.payout_ratio, 0) / count;
+    const estimatedDividendYield = detail.price > 0 ? (latest.cash_dividend_per_share / detail.price) * 100 : null;
+    const maxCashDividend = Math.max(...records.map((item) => item.cash_dividend_per_share));
+    const minCashDividend = Math.min(...records.map((item) => item.cash_dividend_per_share));
+    const variationRatio = maxCashDividend > 0 ? (maxCashDividend - minCashDividend) / maxCashDividend : 0;
+
+    let consecutiveYears = 1;
+    for (let index = 1; index < records.length; index += 1) {
+      const previousYear = extractYearNumber(records[index - 1].year);
+      const currentYear = extractYearNumber(records[index].year);
+      if (previousYear && currentYear && previousYear - currentYear === 1) {
+        consecutiveYears += 1;
+      } else {
+        break;
+      }
+    }
+
+    let stabilityLabel = "样本有限";
+    if (count >= 5 && variationRatio <= 0.35) {
+      stabilityLabel = "分红稳定";
+    } else if (count >= 3 && variationRatio <= 0.6) {
+      stabilityLabel = "分红较稳";
+    } else if (count >= 2) {
+      stabilityLabel = "分红有波动";
+    }
+
+    const highlightTags = [
+      consecutiveYears >= 3 ? `连续分红 ${consecutiveYears} 年` : null,
+      estimatedDividendYield !== null && estimatedDividendYield >= 4 ? "当前股息吸引力较强" : null,
+      avgPayoutRatio >= 50 ? "分红率偏高" : null,
+      latest.ex_dividend_date ? `最近除权 ${latest.ex_dividend_date}` : null,
+    ].filter((item): item is string => Boolean(item));
+
+    const commentary = [
+      `${detail.name} 近 ${count} 个年度存在现金分红记录，最近一次每股分红 ${latest.cash_dividend_per_share.toFixed(2)} 元。`,
+      consecutiveYears >= 3 ? `已连续分红 ${consecutiveYears} 年，具备一定股东回报连续性。` : "连续分红样本较短，需结合年报继续观察。",
+      estimatedDividendYield !== null
+        ? `按当前股价粗略估算，静态股息率约 ${estimatedDividendYield.toFixed(2)}%。`
+        : "当前无法估算静态股息率。",
+      `${stabilityLabel}，建议结合盈利增长、现金流与分红实施节奏综合判断。`,
+    ].join("");
+
+    return {
+      count,
+      latest,
+      avgCashDividend,
+      avgPayoutRatio,
+      estimatedDividendYield,
+      consecutiveYears,
+      stabilityLabel,
+      observationWindow: buildDividendObservationWindow(latest.ex_dividend_date),
+      highlightTags,
+      commentary,
+    };
+  }, [detail]);
 
   const factorRows = useMemo(
     () =>
@@ -724,9 +1003,88 @@ function StockDetailPage() {
     }
   };
 
+  const handleAskQuestion = async (rawQuestion?: string) => {
+    const normalizedQuestion = (rawQuestion ?? qaQuestionInput).trim();
+    if (!normalizedQuestion) {
+      message.warning("请先输入问题");
+      return;
+    }
+    if (!symbol || qaLoading) {
+      return;
+    }
+
+    const requestId = ++qaRequestIdRef.current;
+    qaAbortRef.current?.abort();
+    const controller = new AbortController();
+    qaAbortRef.current = controller;
+
+    const historyPayload: StockQAMessage[] = qaMessages
+      .filter((item) => item.role === "user" || item.role === "assistant")
+      .slice(-8)
+      .map((item) => ({
+        role: item.role,
+        content: item.content,
+      }));
+
+    setQaQuestionInput("");
+    setQaError(null);
+    setQaMessages((prev) => [...prev, { role: "user", content: normalizedQuestion }]);
+    setQaLoading(true);
+
+    try {
+      const response = await askStockQuestion(
+        symbol,
+        {
+          question: normalizedQuestion,
+          history: historyPayload,
+        },
+        { signal: controller.signal },
+      );
+
+      if (controller.signal.aborted || requestId !== qaRequestIdRef.current) {
+        return;
+      }
+
+      setQaMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: response.answer,
+          confidence: response.confidence,
+          bullets: response.bullets,
+          references: response.references,
+          followUpQuestions: response.follow_up_questions,
+          disclaimer: response.disclaimer,
+          searchUsed: response.search_used,
+          searchQuery: response.search_query,
+          searchResultCount: response.search_result_count,
+        },
+      ]);
+    } catch (err) {
+      if (isAbortError(err) || controller.signal.aborted || requestId !== qaRequestIdRef.current) {
+        return;
+      }
+      const messageText = err instanceof Error ? err.message : "AI问答失败";
+      setQaError(messageText);
+      setQaMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: `本次问答暂时失败：${messageText}`,
+          disclaimer: "你可以稍后重试，或换一个更具体的问题。",
+        },
+      ]);
+      message.error(messageText);
+    } finally {
+      if (!controller.signal.aborted && requestId === qaRequestIdRef.current) {
+        setQaLoading(false);
+      }
+    }
+  };
+
   return (
-    <Space direction="vertical" size={16} style={{ width: "100%" }}>
-      <Card>
+    <Space className="stock-detail-page" direction="vertical" size={16} style={{ width: "100%" }}>
+      <Card className="stock-detail-hero">
         <Row gutter={[16, 16]} align="middle" justify="space-between">
           <Col xs={24} lg={16}>
             <Space direction="vertical" size={6}>
@@ -773,7 +1131,13 @@ function StockDetailPage() {
                 <Text style={{ color: detail.change_pct >= 0 ? "#389e0d" : "#cf1322", fontSize: 16 }}>
                   {signedPercent(detail.change_pct)}
                 </Text>
-                {analysis ? <Text type="secondary">置信度：{analysis.confidence}/100</Text> : null}
+                {analysis ? <Text type="secondary">分析置信度：{analysis.confidence}/100</Text> : null}
+                {detail ? <Text type="secondary">数据可信度：{detail.data_quality.reliability_score}/100</Text> : null}
+                <Space style={{ width: "100%", justifyContent: "flex-end" }} wrap size={6}>
+                  <Tag bordered={false} color="blue">PE {detail.pe.toFixed(1)}</Tag>
+                  <Tag bordered={false} color="purple">PB {detail.pb.toFixed(2)}</Tag>
+                  <Tag bordered={false} color="cyan">ROE {detail.roe.toFixed(1)}%</Tag>
+                </Space>
               </Space>
             ) : null}
           </Col>
@@ -792,7 +1156,7 @@ function StockDetailPage() {
 
       {!loading && detail && analysis ? (
         <>
-          <Card>
+          <Card className="stock-detail-tab-card">
             <Tabs
               activeKey={detailActiveTab}
               onChange={(value) => setDetailActiveTab(value as DetailTabKey)}
@@ -845,6 +1209,244 @@ function StockDetailPage() {
             </Col>
           </Row>
 
+          <Card
+            title="AI问答（Beta）"
+            extra={<Text type="secondary">基于当前股票详情数据回答</Text>}
+          >
+            <Space direction="vertical" size={10} style={{ width: "100%" }}>
+              <Space wrap>
+                {qaQuickQuestions.map((item) => (
+                  <Tag
+                    key={item}
+                    style={{ cursor: "pointer", userSelect: "none" }}
+                    onClick={() => void handleAskQuestion(item)}
+                  >
+                    {item}
+                  </Tag>
+                ))}
+              </Space>
+
+              <TextArea
+                value={qaQuestionInput}
+                rows={3}
+                showCount
+                maxLength={500}
+                placeholder="例如：这只股票现在估值高吗？主要风险是什么？适合怎么分批买入？"
+                onChange={(event) => setQaQuestionInput(event.target.value)}
+                onCompositionStart={() => setQaComposing(true)}
+                onCompositionEnd={() => setQaComposing(false)}
+                onPressEnter={(event) => {
+                  if (qaComposing || event.nativeEvent.isComposing) {
+                    return;
+                  }
+                  if (!event.shiftKey) {
+                    event.preventDefault();
+                    void handleAskQuestion();
+                  }
+                }}
+              />
+
+              <Space>
+                <Button type="primary" loading={qaLoading} onClick={() => void handleAskQuestion()}>
+                  发送问题
+                </Button>
+                <Text type="secondary">按 Enter 发送，Shift + Enter 换行</Text>
+              </Space>
+
+              {qaError ? <Alert type="warning" showIcon message={`问答失败：${qaError}`} /> : null}
+
+              <List
+                size="small"
+                dataSource={qaMessages}
+                locale={{ emptyText: "输入问题后，这里会显示问答记录" }}
+                renderItem={(item) => (
+                  <List.Item>
+                    <div
+                      style={{
+                        width: "100%",
+                        background: item.role === "assistant" ? "#f6ffed" : "#f5f5f5",
+                        border: "1px solid #f0f0f0",
+                        borderRadius: 8,
+                        padding: "10px 12px",
+                      }}
+                    >
+                      <Space direction="vertical" size={6} style={{ width: "100%" }}>
+                        <Space wrap>
+                          <Tag color={item.role === "assistant" ? "green" : "blue"}>
+                            {item.role === "assistant" ? "AI" : "你"}
+                          </Tag>
+                          {item.role === "assistant" && item.confidence ? <Tag>置信度 {item.confidence}/99</Tag> : null}
+                          {item.role === "assistant" && item.searchUsed ? <Tag color="processing">已联网检索 {item.searchResultCount ?? 0} 条</Tag> : null}
+                        </Space>
+
+                        <Paragraph style={{ marginBottom: 0 }}>{item.content}</Paragraph>
+
+                        {item.bullets && item.bullets.length > 0 ? (
+                          <List
+                            size="small"
+                            dataSource={item.bullets}
+                            renderItem={(bullet) => (
+                              <List.Item style={{ paddingBlock: 4 }}>
+                                <Text type="secondary">- {bullet}</Text>
+                              </List.Item>
+                            )}
+                          />
+                        ) : null}
+
+                        {item.searchUsed && item.searchQuery ? <Text type="secondary">检索词：{item.searchQuery}</Text> : null}
+
+                        {item.references && item.references.length > 0 ? (
+                          <Space direction="vertical" size={2}>
+                            <Text strong>关键依据</Text>
+                            {item.references.map((reference) => (
+                              <Text key={reference} type="secondary">
+                                · {reference}
+                              </Text>
+                            ))}
+                          </Space>
+                        ) : null}
+
+                        {item.followUpQuestions && item.followUpQuestions.length > 0 ? (
+                          <Space wrap>
+                            {item.followUpQuestions.map((followUp) => (
+                              <Tag
+                                key={followUp}
+                                color="processing"
+                                style={{ cursor: "pointer" }}
+                                onClick={() => void handleAskQuestion(followUp)}
+                              >
+                                {followUp}
+                              </Tag>
+                            ))}
+                          </Space>
+                        ) : null}
+
+                        {item.disclaimer ? <Text type="secondary">{item.disclaimer}</Text> : null}
+                      </Space>
+                    </div>
+                  </List.Item>
+                )}
+              />
+            </Space>
+          </Card>
+
+          <Card
+            title="K线走势"
+            extra={
+              <Space>
+                <Button
+                  size="small"
+                  type={klineInterval === "1d" ? "primary" : "default"}
+                  onClick={() => setKlineInterval("1d")}
+                >
+                  日线
+                </Button>
+                <Button
+                  size="small"
+                  type={klineInterval === "1h" ? "primary" : "default"}
+                  onClick={() => setKlineInterval("1h")}
+                >
+                  小时线
+                </Button>
+                <Divider type="vertical" />
+                {[
+                  { label: "1M", value: "1mo" },
+                  { label: "3M", value: "3mo" },
+                  { label: "6M", value: "6mo" },
+                  { label: "1Y", value: "1y" },
+                  { label: "5Y", value: "5y" },
+                ].map((item) => (
+                  <Button
+                    key={item.value}
+                    size="small"
+                    type={klinePeriod === item.value ? "primary" : "default"}
+                    onClick={() => setKlinePeriod(item.value as KLinePeriod)}
+                  >
+                    {item.label}
+                  </Button>
+                ))}
+              </Space>
+            }
+          >
+            <Space direction="vertical" size={10} style={{ width: "100%" }}>
+              <Space wrap>
+                <Tag color={klineData?.is_fallback ? "warning" : "success"}>{klineData?.is_fallback ? "备用K线" : "真实K线"}</Tag>
+                <Tag color="blue">{klineInterval === "1h" ? "小时级" : "日级"}</Tag>
+                <Tag>{klineAdjustmentLabel}</Tag>
+                <Text type="secondary">数据源：{klineSourceLabel}</Text>
+                <Text type="secondary">自动刷新：15秒</Text>
+                {klineData?.change_pct !== undefined && klineData?.change_pct !== null ? (
+                  <Text type="secondary">区间涨跌幅 {klineData.change_pct >= 0 ? "+" : ""}{klineData.change_pct.toFixed(2)}%</Text>
+                ) : null}
+              </Space>
+              {klineSummary ? (
+                <Descriptions size="small" column={4} bordered>
+                  <Descriptions.Item label="最新收盘">{klineSummary.latest.close.toFixed(2)}</Descriptions.Item>
+                  <Descriptions.Item label="区间最高">{klineSummary.highest.toFixed(2)}</Descriptions.Item>
+                  <Descriptions.Item label="区间最低">{klineSummary.lowest.toFixed(2)}</Descriptions.Item>
+                  <Descriptions.Item label="平均成交额">{yuanToYi(klineSummary.avgTurnover)}</Descriptions.Item>
+                </Descriptions>
+              ) : null}
+              {klineData?.warning ? <Alert type="warning" showIcon message={klineData.warning} /> : null}
+              {klineError ? <Alert type="warning" showIcon message={`K线加载失败：${klineError}`} /> : null}
+              <Card loading={klineLoading} bodyStyle={{ padding: 12 }}>
+                <StockKLineChart points={klineData?.points ?? []} />
+              </Card>
+            </Space>
+          </Card>
+
+          <Row gutter={[16, 16]}>
+            <Col xs={24} lg={10}>
+              <Card title="数据可信度与来源">
+                <Descriptions column={2} size="small" bordered>
+                  <Descriptions.Item label="数据来源">{detail.data_quality.source}</Descriptions.Item>
+                  <Descriptions.Item label="行情来源">{detail.data_quality.price_source}</Descriptions.Item>
+                  <Descriptions.Item label="基本面来源">{detail.data_quality.fundamentals_source}</Descriptions.Item>
+                  <Descriptions.Item label="联网补齐">{detail.data_quality.is_enriched ? "已补齐" : "基础模式"}</Descriptions.Item>
+                  <Descriptions.Item label="覆盖率">{detail.data_quality.coverage_score.toFixed(1)}%</Descriptions.Item>
+                  <Descriptions.Item label="可信度">{detail.data_quality.reliability_score}/100</Descriptions.Item>
+                  <Descriptions.Item label="最后更新时间">{detail.data_quality.updated_at ? new Date(detail.data_quality.updated_at).toLocaleString() : "未知"}</Descriptions.Item>
+                  <Descriptions.Item label="距今天数">{detail.data_quality.freshness_days ?? "未知"}</Descriptions.Item>
+                </Descriptions>
+
+                <Divider style={{ margin: "12px 0" }} />
+                <List
+                  size="small"
+                  header={<Text strong>可信度提醒</Text>}
+                  dataSource={detail.data_quality.warnings.length > 0 ? detail.data_quality.warnings : ["当前无额外可信度警告。"]}
+                  renderItem={(item) => (
+                    <List.Item>
+                      <Text type={detail.data_quality.warnings.length > 0 ? "warning" : undefined}>{item}</Text>
+                    </List.Item>
+                  )}
+                />
+              </Card>
+            </Col>
+
+            <Col xs={24} lg={14}>
+              <Card title="分析依据与适配提示">
+                <Paragraph type="secondary" style={{ marginBottom: 8 }}>
+                  {analysis.methodology}
+                </Paragraph>
+                <Paragraph style={{ marginBottom: 8 }}>{analysis.suitability_note}</Paragraph>
+                <Paragraph type="secondary" style={{ marginBottom: 12 }}>
+                  {analysis.disclaimer}
+                </Paragraph>
+
+                <List
+                  size="small"
+                  header={<Text strong>本次结论的主要依据</Text>}
+                  dataSource={analysis.evidence_points}
+                  renderItem={(item) => (
+                    <List.Item>
+                      <Text>{item}</Text>
+                    </List.Item>
+                  )}
+                />
+              </Card>
+            </Col>
+          </Row>
+
           <Row gutter={[16, 16]}>
             <Col xs={24} lg={12}>
               <Card title="公司档案与基本介绍">
@@ -857,12 +1459,21 @@ function StockDetailPage() {
                   <Descriptions.Item label="员工规模">{detail.employees.toLocaleString("zh-CN")}</Descriptions.Item>
                 </Descriptions>
 
-                <Paragraph style={{ marginTop: 12, marginBottom: 8 }}>{detail.company_intro}</Paragraph>
-                <Paragraph type="secondary" style={{ marginBottom: 8 }}>
+                <Alert
+                  style={{ marginTop: 12, marginBottom: 12 }}
+                  type="info"
+                  showIcon
+                  message="行业定位"
+                  description={detail.industry_positioning}
+                />
+
+                <Paragraph style={{ marginBottom: 8 }}>{detail.company_intro}</Paragraph>
+                <Paragraph type="secondary" style={{ marginBottom: 12 }}>
                   主营业务：{detail.main_business}
                 </Paragraph>
 
-                <Space wrap style={{ marginBottom: 8 }}>
+                <Text strong>主要产品与服务</Text>
+                <Space wrap style={{ marginTop: 8, marginBottom: 12 }}>
                   {detail.products_services.map((item) => (
                     <Tag key={item} color="geekblue">
                       {item}
@@ -870,7 +1481,43 @@ function StockDetailPage() {
                   ))}
                 </Space>
 
-                <Space wrap>
+                <Text strong>业务范围</Text>
+                <List
+                  size="small"
+                  style={{ marginTop: 8 }}
+                  dataSource={detail.business_scope}
+                  renderItem={(item) => (
+                    <List.Item>
+                      <Text>{item}</Text>
+                    </List.Item>
+                  )}
+                />
+
+                <Divider style={{ margin: "12px 0" }} />
+                <Text strong>主要覆盖市场</Text>
+                <Space wrap style={{ marginTop: 8, marginBottom: 12 }}>
+                  {detail.market_coverage.map((item) => (
+                    <Tag key={item} color="cyan">
+                      {item}
+                    </Tag>
+                  ))}
+                </Space>
+
+                <Text strong>公司亮点</Text>
+                <List
+                  size="small"
+                  style={{ marginTop: 8 }}
+                  dataSource={detail.company_highlights}
+                  renderItem={(item) => (
+                    <List.Item>
+                      <Text>{item}</Text>
+                    </List.Item>
+                  )}
+                />
+
+                <Divider style={{ margin: "12px 0" }} />
+                <Text strong>业务标签</Text>
+                <Space wrap style={{ marginTop: 8 }}>
                   {detail.business_tags.map((tag) => (
                     <Tag key={tag}>{tag}</Tag>
                   ))}
@@ -930,6 +1577,55 @@ function StockDetailPage() {
                   columns={valuationColumns}
                   style={{ marginTop: 8 }}
                 />
+
+                <Divider style={{ margin: "14px 0" }} />
+
+                <Text strong>分红分析</Text>
+                {dividendAnalysis ? (
+                  <Space direction="vertical" size={12} style={{ width: "100%", marginTop: 8 }}>
+                    <Row gutter={[12, 12]}>
+                      <Col xs={12} sm={6}>
+                        <Statistic title="分红年数" value={dividendAnalysis.count} suffix="年" />
+                      </Col>
+                      <Col xs={12} sm={6}>
+                        <Statistic title="最近每股分红" value={dividendAnalysis.latest.cash_dividend_per_share} precision={2} suffix="元" />
+                      </Col>
+                      <Col xs={12} sm={6}>
+                        <Statistic
+                          title="估算股息率"
+                          value={dividendAnalysis.estimatedDividendYield == null ? "待估算" : dividendAnalysis.estimatedDividendYield}
+                          precision={dividendAnalysis.estimatedDividendYield == null ? undefined : 2}
+                          suffix="%"
+                        />
+                      </Col>
+                      <Col xs={12} sm={6}>
+                        <Statistic title="平均分红率" value={dividendAnalysis.avgPayoutRatio} precision={1} suffix="%" />
+                      </Col>
+                    </Row>
+
+                    <Descriptions column={2} size="small" bordered>
+                      <Descriptions.Item label="连续分红判断">{dividendAnalysis.consecutiveYears} 年</Descriptions.Item>
+                      <Descriptions.Item label="分红稳定性">{dividendAnalysis.stabilityLabel}</Descriptions.Item>
+                      <Descriptions.Item label="平均每股分红">{dividendAnalysis.avgCashDividend.toFixed(2)} 元</Descriptions.Item>
+                      <Descriptions.Item label="最近除权日">{dividendAnalysis.latest.ex_dividend_date || "待披露"}</Descriptions.Item>
+                      <Descriptions.Item label="下次观察窗口" span={2}>
+                        {dividendAnalysis.observationWindow}
+                      </Descriptions.Item>
+                    </Descriptions>
+
+                    <Space wrap>
+                      {dividendAnalysis.highlightTags.map((item) => (
+                        <Tag key={item} color="gold">
+                          {item}
+                        </Tag>
+                      ))}
+                    </Space>
+
+                    <Alert type="info" showIcon message="分红分析结论" description={dividendAnalysis.commentary} />
+                  </Space>
+                ) : (
+                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无可分析的分红历史" style={{ marginTop: 12 }} />
+                )}
 
                 <Divider style={{ margin: "14px 0" }} />
 

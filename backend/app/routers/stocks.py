@@ -11,8 +11,11 @@ from app.schemas.stock import (
     RecommendationType,
     StockEnrichResponse,
     StockEnrichStatusResponse,
+    StockKLineResponse,
     StockAnalysis,
     StockDetail,
+    StockQARequest,
+    StockQAResponse,
     StockListResponse,
     SectorRotationResponse,
     StockSnapshot,
@@ -24,8 +27,10 @@ from app.schemas.stock import (
 )
 from app.services.enrichment_service import enrich_stock_universe, get_enrichment_status
 from app.services.stock_service import (
+    ask_stock_question,
     get_sector_rotation_summary,
     get_stock_analysis,
+    get_stock_kline,
     get_stock_detail,
     get_stock_list,
     get_stock_snapshot,
@@ -46,14 +51,37 @@ def list_stocks(
     concept: Optional[str] = Query(default=None),
     tag: Optional[str] = Query(default=None),
     recommendation: Optional[RecommendationType] = Query(default=None),
+    dividend_only: Optional[bool] = Query(default=None),
+    dividend_years_min: Optional[int] = Query(default=None, ge=1, le=20),
+    dividend_yield_min: Optional[float] = Query(default=None, ge=0, le=50),
+    ex_dividend_soon: Optional[bool] = Query(default=None),
+    market_cap_min: Optional[float] = Query(default=None, ge=0, le=1000000),
+    market_cap_max: Optional[float] = Query(default=None, ge=0, le=1000000),
+    price_min: Optional[float] = Query(default=None, ge=0, le=1000000),
+    price_max: Optional[float] = Query(default=None, ge=0, le=1000000),
+    pe_max: Optional[float] = Query(default=None, ge=0, le=500),
+    net_profit_min: Optional[float] = Query(default=None, ge=0, le=1000000),
+    revenue_min: Optional[float] = Query(default=None, ge=0, le=1000000),
+    revenue_growth_min: Optional[float] = Query(default=None, ge=-100, le=300),
+    revenue_growth_qoq_min: Optional[float] = Query(default=None, ge=-100, le=300),
+    profit_growth_min: Optional[float] = Query(default=None, ge=-100, le=300),
+    profit_growth_qoq_min: Optional[float] = Query(default=None, ge=-100, le=300),
+    gross_margin_min: Optional[float] = Query(default=None, ge=0, le=100),
+    net_margin_min: Optional[float] = Query(default=None, ge=-100, le=100),
+    roe_min: Optional[float] = Query(default=None, ge=-100, le=100),
+    debt_ratio_max: Optional[float] = Query(default=None, ge=0, le=100),
+    exclude_st: Optional[bool] = Query(default=None),
     score_min: Optional[int] = Query(default=None, ge=1, le=99),
     score_max: Optional[int] = Query(default=None, ge=1, le=99),
     change_pct_min: Optional[float] = Query(default=None, ge=-30, le=30),
     change_pct_max: Optional[float] = Query(default=None, ge=-30, le=30),
+    prev_limit_up: Optional[bool] = Query(default=None),
+    prev_limit_down: Optional[bool] = Query(default=None),
     q: Optional[str] = Query(default=None),
-    sort_by: Literal["score", "change_pct", "price"] = Query(default="score"),
+    sort_by: Literal["score", "change_pct", "price", "dividend_years", "dividend_yield"] = Query(default="score"),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=50, ge=10, le=200),
+    include_meta: bool = Query(default=True),
     db: Session = Depends(get_db),
 ) -> StockListResponse:
     return get_stock_list(
@@ -66,14 +94,37 @@ def list_stocks(
         concept=concept,
         tag=tag,
         recommendation=recommendation,
+        dividend_only=dividend_only,
+        dividend_years_min=dividend_years_min,
+        dividend_yield_min=dividend_yield_min,
+        ex_dividend_soon=ex_dividend_soon,
+        market_cap_min=market_cap_min,
+        market_cap_max=market_cap_max,
+        price_min=price_min,
+        price_max=price_max,
+        pe_max=pe_max,
+        net_profit_min=net_profit_min,
+        revenue_min=revenue_min,
+        revenue_growth_min=revenue_growth_min,
+        revenue_growth_qoq_min=revenue_growth_qoq_min,
+        profit_growth_min=profit_growth_min,
+        profit_growth_qoq_min=profit_growth_qoq_min,
+        gross_margin_min=gross_margin_min,
+        net_margin_min=net_margin_min,
+        roe_min=roe_min,
+        debt_ratio_max=debt_ratio_max,
+        exclude_st=exclude_st,
         score_min=score_min,
         score_max=score_max,
         change_pct_min=change_pct_min,
         change_pct_max=change_pct_max,
+        prev_limit_up=prev_limit_up,
+        prev_limit_down=prev_limit_down,
         q=q,
         sort_by=sort_by,
         page=page,
         page_size=page_size,
+        include_meta=include_meta,
     )
 
 
@@ -167,6 +218,31 @@ def update_stock_trade_review_endpoint(
 
     if response is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="股票或复盘记录不存在")
+    return response
+
+
+@router.get("/{symbol}/kline", response_model=StockKLineResponse)
+def get_stock_kline_endpoint(
+    symbol: str,
+    period: Literal["1mo", "3mo", "6mo", "1y", "5y"] = Query(default="6mo"),
+    interval: Literal["1d", "1h"] = Query(default="1d"),
+    db: Session = Depends(get_db),
+) -> StockKLineResponse:
+    response = get_stock_kline(db=db, symbol=symbol, period=period, interval=interval)
+    if response is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="股票不存在")
+    return response
+
+
+@router.post("/{symbol}/qa", response_model=StockQAResponse)
+def ask_stock_question_endpoint(
+    symbol: str,
+    payload: StockQARequest,
+    db: Session = Depends(get_db),
+) -> StockQAResponse:
+    response = ask_stock_question(db=db, symbol=symbol, question=payload.question, history=[item.model_dump() for item in payload.history])
+    if response is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="股票不存在")
     return response
 
 

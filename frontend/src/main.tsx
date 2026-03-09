@@ -12,7 +12,12 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       theme={{
         token: {
           colorPrimary: "#1677ff",
-          borderRadius: 8,
+          colorSuccess: "#389e0d",
+          colorWarning: "#d48806",
+          colorError: "#cf1322",
+          borderRadius: 12,
+          controlHeight: 38,
+          fontSize: 14,
         },
       }}
     >
