@@ -50,6 +50,26 @@ def _parse_json_list(raw: Optional[str]) -> List[str]:
     return [str(item).strip() for item in data if str(item).strip()]
 
 
+WATCHLIST_MONITOR_INTERVAL_OPTIONS = {1, 5, 10, 15, 30, 60}
+DEFAULT_WATCHLIST_MONITOR_FOCUS = ["price_move", "near_alert", "trend_breakout"]
+
+
+def _normalize_monitor_interval(value: Optional[int]) -> int:
+    if value is None:
+        return 15
+    parsed = int(value)
+    return parsed if parsed in WATCHLIST_MONITOR_INTERVAL_OPTIONS else 15
+
+
+def _normalize_monitor_focus(values: Optional[Sequence[str]]) -> List[str]:
+    if values is None:
+        return list(DEFAULT_WATCHLIST_MONITOR_FOCUS)
+    cleaned = [str(value).strip() for value in values if str(value).strip()]
+    if not cleaned:
+        return list(DEFAULT_WATCHLIST_MONITOR_FOCUS)
+    return list(dict.fromkeys(cleaned))[:8]
+
+
 def _dump_json_list(values: Sequence[str]) -> str:
     cleaned = [str(value).strip() for value in values if str(value).strip()]
     return json.dumps(cleaned, ensure_ascii=False)
@@ -121,6 +141,13 @@ def _watchlist_row_to_schema(row: UserWatchlistItem, meta: Optional[Dict[str, ob
         alert_price_up=row.alert_price_up,
         alert_price_down=row.alert_price_down,
         target_position_pct=row.target_position_pct,
+        monitor_enabled=row.monitor_enabled,
+        monitor_interval_minutes=row.monitor_interval_minutes,
+        monitor_focus=_parse_json_list(row.monitor_focus_json),
+        monitor_last_checked_at=row.monitor_last_checked_at,
+        monitor_last_summary=row.monitor_last_summary,
+        monitor_last_signal_level=row.monitor_last_signal_level,
+        monitor_last_notified_at=row.monitor_last_notified_at,
         created_at=row.created_at,
         updated_at=row.updated_at,
     )
@@ -157,6 +184,9 @@ def create_user_watchlist_item(db: Session, user_id: int, payload: WatchlistItem
         alert_price_up=payload.alert_price_up,
         alert_price_down=payload.alert_price_down,
         target_position_pct=payload.target_position_pct,
+        monitor_enabled=payload.monitor_enabled,
+        monitor_interval_minutes=_normalize_monitor_interval(payload.monitor_interval_minutes),
+        monitor_focus_json=_dump_json_list(_normalize_monitor_focus(payload.monitor_focus)),
     )
     db.add(row)
     db.commit()
@@ -181,6 +211,12 @@ def update_user_watchlist_item(db: Session, user_id: int, item_id: int, payload:
         row.alert_price_down = payload.alert_price_down
     if payload.target_position_pct is not None:
         row.target_position_pct = payload.target_position_pct
+    if payload.monitor_enabled is not None:
+        row.monitor_enabled = payload.monitor_enabled
+    if payload.monitor_interval_minutes is not None:
+        row.monitor_interval_minutes = _normalize_monitor_interval(payload.monitor_interval_minutes)
+    if payload.monitor_focus is not None:
+        row.monitor_focus_json = _dump_json_list(_normalize_monitor_focus(payload.monitor_focus))
 
     db.add(row)
     db.commit()

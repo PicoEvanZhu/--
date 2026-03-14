@@ -1,6 +1,9 @@
 import { request } from "./client";
 import type {
   DashboardSummary,
+  MainForceScanResponse,
+  MainForceSettingResponse,
+  MainForceSettingUpdate,
   MarketType,
   RecommendationType,
   ReportDetail,
@@ -73,6 +76,18 @@ interface StockEnrichQuery {
   market?: MarketType;
   limit?: number;
   sleep_ms?: number;
+}
+
+interface MainForceQuery {
+  market?: MarketType;
+  limit?: number;
+  top_n?: number;
+  with_llm?: boolean;
+  llm_top_n?: number;
+  with_web?: boolean;
+  sentiment_top_n?: number;
+  use_settings?: boolean;
+  persist?: boolean;
 }
 
 export async function listStocks(query: StockListQuery = {}, options: RequestOptions = {}): Promise<StockListResponse> {
@@ -356,6 +371,63 @@ export async function listReports(q?: string): Promise<ReportListItem[]> {
 export async function getReportDetail(symbol: string): Promise<ReportDetail> {
   return request<ReportDetail>({
     path: `/reports/${encodeURIComponent(symbol)}`,
+    method: "GET",
+  });
+}
+
+export async function scanMainForce(query: MainForceQuery = {}): Promise<MainForceScanResponse> {
+  const params = new URLSearchParams();
+  if (query.market) {
+    params.set("market", query.market);
+  }
+  if (query.limit !== undefined) {
+    params.set("limit", String(query.limit));
+  }
+  if (query.top_n !== undefined) {
+    params.set("top_n", String(query.top_n));
+  }
+  if (query.with_llm !== undefined) {
+    params.set("with_llm", String(query.with_llm));
+  }
+  if (query.llm_top_n !== undefined) {
+    params.set("llm_top_n", String(query.llm_top_n));
+  }
+  if (query.with_web !== undefined) {
+    params.set("with_web", String(query.with_web));
+  }
+  if (query.sentiment_top_n !== undefined) {
+    params.set("sentiment_top_n", String(query.sentiment_top_n));
+  }
+  if (query.use_settings !== undefined) {
+    params.set("use_settings", String(query.use_settings));
+  }
+  if (query.persist !== undefined) {
+    params.set("persist", String(query.persist));
+  }
+  return request<MainForceScanResponse>({
+    path: `/stocks/main-force/scan${params.toString() ? `?${params.toString()}` : ""}`,
+    method: "GET",
+  });
+}
+
+export async function getMainForceSettings(): Promise<MainForceSettingResponse> {
+  return request<MainForceSettingResponse>({
+    path: "/stocks/main-force/settings",
+    method: "GET",
+  });
+}
+
+export async function updateMainForceSettings(payload: MainForceSettingUpdate): Promise<MainForceSettingResponse> {
+  return request<MainForceSettingResponse>({
+    path: "/stocks/main-force/settings",
+    method: "PATCH",
+    payload,
+  });
+}
+
+export async function getMainForceLatest(): Promise<MainForceScanResponse> {
+  return request<MainForceScanResponse>({
+    path: "/stocks/main-force/latest",
     method: "GET",
   });
 }

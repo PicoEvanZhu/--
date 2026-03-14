@@ -6,6 +6,9 @@ from pydantic import BaseModel, Field
 MarketType = Literal["A股", "港股", "创业板", "科创板", "美股"]
 RecommendationType = Literal["buy", "watch", "hold_cautious", "avoid"]
 RiskLevel = Literal["low", "medium", "high"]
+MainForceStage = Literal["accumulation", "pullback", "markup", "distribution", "neutral"]
+MainForceSignalLevel = Literal["high", "medium", "low"]
+MainForceJobStatus = Literal["pending", "running", "success", "failed"]
 TradeReviewAction = Literal["buy", "sell", "add", "reduce", "observe"]
 FollowUpStatus = Literal["open", "in_progress", "closed"]
 
@@ -46,6 +49,80 @@ class StockItem(BaseModel):
     is_high_dividend: bool = False
     is_ex_dividend_soon: bool = False
     updated_at: Optional[str] = None
+
+
+class MainForceMetrics(BaseModel):
+    range_20: float
+    range_60: float
+    range_squeeze: float
+    vol_20: float
+    vol_60: float
+    vol_squeeze: float
+    obv_slope_20: float
+    up_volume_ratio_20: float
+    close_slope_60: float
+    drawdown_60: float
+
+
+class MainForceCandidate(BaseModel):
+    symbol: str
+    name: str
+    market: MarketType
+    price: float
+    change_pct: float
+    score: int
+    stage: MainForceStage
+    signal_level: MainForceSignalLevel
+    reason: str
+    metrics: MainForceMetrics
+    sentiment_score: Optional[float] = None
+    sentiment_summary: Optional[str] = None
+    sentiment_sources: int = 0
+    llm_summary: Optional[str] = None
+
+
+class MainForceScanResponse(BaseModel):
+    generated_at: str
+    total_scanned: int
+    candidates: List[MainForceCandidate]
+
+
+class MainForceSettingUpdate(BaseModel):
+    enabled: Optional[bool] = None
+    scan_interval_minutes: Optional[int] = None
+    overrides: Optional[Dict[str, object]] = None
+
+
+class MainForceSettingResponse(BaseModel):
+    enabled: bool
+    scan_interval_minutes: int
+    overrides: Dict[str, object]
+    effective: Dict[str, object]
+    last_run_at: Optional[str] = None
+
+
+class MainForceJobResponse(BaseModel):
+    job_id: int
+    status: MainForceJobStatus
+    market: str
+    total: int
+    processed: int
+    candidates_found: int
+    scan_id: Optional[int] = None
+    started_at: Optional[str] = None
+    finished_at: Optional[str] = None
+    error_message: Optional[str] = None
+
+
+class MainForceJobStartRequest(BaseModel):
+    market: Optional[MarketType] = None
+    batch_size: Optional[int] = None
+    stage: Optional[MainForceStage] = None
+    min_signal_level: Optional[MainForceSignalLevel] = None
+    max_candidates: Optional[int] = None
+    with_llm: Optional[bool] = None
+    with_web: Optional[bool] = None
+    sentiment_top_n: Optional[int] = None
 
 
 class FinancialReport(BaseModel):

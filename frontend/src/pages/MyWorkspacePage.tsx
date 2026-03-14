@@ -6,6 +6,8 @@ import {
   Button,
   Card,
   Col,
+  Descriptions,
+  Drawer,
   Form,
   Input,
   InputNumber,
@@ -14,6 +16,7 @@ import {
   Select,
   Space,
   Statistic,
+  Switch,
   Table,
   Tabs,
   Tag,
@@ -27,9 +30,14 @@ import {
   deleteMyPosition,
   deleteMyWatchlistItem,
   getMyPositionAnalysis,
+  listMyNotifications,
+  refreshMyNotifications,
   listMyFollowUps,
   listMyPositions,
   listMyWatchlist,
+  runMyWatchlistMonitor,
+  runMyWatchlistMonitorAll,
+  updateMyWatchlistItem,
 } from "../api/account";
 import {
   createGuestFollowUp,
@@ -38,13 +46,19 @@ import {
   deleteGuestPosition,
   deleteGuestWatchlistItem,
   getGuestWorkspaceSnapshot,
+  listGuestNotifications,
+  refreshGuestNotifications,
+  updateGuestWatchlistItem,
 } from "../services/guestData";
 import type {
+  MonitorIntervalMinutes,
+  NotificationItem,
   PositionAnalysisResponse,
   PositionFollowUpCreateRequest,
   PositionFollowUpItem,
   PositionSnapshot,
   WatchlistItem,
+  WatchlistItemUpdateRequest,
 } from "../types/account";
 import { getAuthEventName, getSessionUser, hasSessionAccess, isGuestMode, startGuestSession } from "../utils/auth";
 
@@ -70,6 +84,44 @@ interface FollowUpFormValues {
   status: "open" | "in_progress" | "closed";
 }
 
+interface WatchlistMonitorFormValues {
+  monitor_enabled: boolean;
+  monitor_interval_minutes: MonitorIntervalMinutes;
+  monitor_focus: string[];
+  alert_price_up?: number;
+  alert_price_down?: number;
+  note?: string;
+}
+
+const WATCHLIST_MONITOR_INTERVAL_OPTIONS: Array<{ label: string; value: MonitorIntervalMinutes }> = [
+  { label: "1分钟", value: 1 },
+  { label: "5分钟", value: 5 },
+  { label: "10分钟", value: 10 },
+  { label: "15分钟", value: 15 },
+  { label: "30分钟", value: 30 },
+  { label: "60分钟", value: 60 },
+];
+
+const WATCHLIST_MONITOR_FOCUS_OPTIONS = [
+  { label: "价格异动", value: "price_move" },
+  { label: "接近预警价", value: "near_alert" },
+  { label: "突破支撑/压力", value: "trend_breakout" },
+  { label: "成交额放大", value: "turnover_spike" },
+  { label: "板块轮动共振", value: "sector_rotation" },
+];
+
+const WATCHLIST_MONITOR_FOCUS_LABEL_MAP: Record<string, string> = {
+  price_move: "价格异动",
+  near_alert: "接近预警价",
+  trend_breakout: "突破支撑/压力",
+  turnover_spike: "成交额放大",
+  sector_rotation: "板块轮动共振",
+};
+
+function monitorFocusLabel(value: string): string {
+  return WATCHLIST_MONITOR_FOCUS_LABEL_MAP[value] ?? value;
+}
+
 function toSignedPercent(value: number): string {
   return `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
 }
@@ -83,6 +135,7 @@ function MyWorkspacePage() {
 
   const [positionForm] = Form.useForm<PositionFormValues>();
   const [followUpForm] = Form.useForm<FollowUpFormValues>();
+  const [watchlistMonitorForm] = Form.useForm<WatchlistMonitorFormValues>();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,9 +143,18 @@ function MyWorkspacePage() {
   const [positions, setPositions] = useState<PositionSnapshot[]>([]);
   const [analysis, setAnalysis] = useState<PositionAnalysisResponse | null>(null);
   const [followUps, setFollowUps] = useState<PositionFollowUpItem[]>([]);
+  const [monitorNotifications, setMonitorNotifications] = useState<NotificationItem[]>([]);
 
   const [positionSubmitting, setPositionSubmitting] = useState(false);
   const [followUpSubmitting, setFollowUpSubmitting] = useState(false);
+  const [watchlistMonitorOpen, setWatchlistMonitorOpen] = useState(false);
+  const [watchlistMonitorSubmitting, setWatchlistMonitorSubmitting] = useState(false);
+  const [watchlistMonitorRunning, setWatchlistMonitorRunning] = useState(false);
+  const [watchlistMonitorBatchSaving, setWatchlistMonitorBatchSaving] = useState(false);
+  const [watchlistMonitorItem, setWatchlistMonitorItem] = useState<WatchlistItem | null>(null);
+  const [monitorKeyword, setMonitorKeyword] = useState("");
+  const [monitorSignalFilter, setMonitorSignalFilter] = useState<string | undefined>(undefined);
+  const [monitorIntervalFilter, setMonitorIntervalFilter] = useState<MonitorIntervalMinutes | undefined>(undefined);
   const [watchlistKeyword, setWatchlistKeyword] = useState("");
   const [watchlistGroupFilter, setWatchlistGroupFilter] = useState<string | undefined>(undefined);
 
@@ -123,10 +185,12 @@ function MyWorkspacePage() {
     if (guestMode) {
       try {
         const guestSnapshot = getGuestWorkspaceSnapshot();
+        const guestNotifications = listGuestNotifications(false).items.filter((item) => item.category === "watch_monitor");
         setWatchlist(guestSnapshot.watchlist.items);
         setPositions(guestSnapshot.positions.items);
         setAnalysis(guestSnapshot.analysis);
         setFollowUps(guestSnapshot.followUps.items);
+        setMonitorNotifications(guestNotifications);
       } catch (errorObject) {
         const err = errorObject as Error;
         setError(err.message);
@@ -137,16 +201,18 @@ function MyWorkspacePage() {
     }
 
     try {
-      const [watchlistResponse, positionsResponse, analysisResponse, followUpResponse] = await Promise.all([
+      const [watchlistResponse, positionsResponse, analysisResponse, followUpResponse, notificationResponse] = await Promise.all([
         listMyWatchlist(),
         listMyPositions(),
         getMyPositionAnalysis(),
         listMyFollowUps(),
+        listMyNotifications(false),
       ]);
       setWatchlist(watchlistResponse.items);
       setPositions(positionsResponse.items);
       setAnalysis(analysisResponse);
       setFollowUps(followUpResponse.items);
+      setMonitorNotifications(notificationResponse.items.filter((item) => item.category === "watch_monitor"));
     } catch (errorObject) {
       const err = errorObject as Error;
       setError(err.message);
@@ -244,6 +310,48 @@ function MyWorkspacePage() {
     return groups.map((group) => ({ label: group, value: group }));
   }, [watchlist]);
 
+  const monitorEnabledWatchlist = useMemo(
+    () => watchlist.filter((item) => item.monitor_enabled),
+    [watchlist],
+  );
+
+  const recentMonitorNotifications = useMemo(
+    () => monitorNotifications.slice(0, 12),
+    [monitorNotifications],
+  );
+
+  const filteredMonitorWatchlist = useMemo(() => {
+    const normalizedKeyword = monitorKeyword.trim().toUpperCase();
+    return monitorEnabledWatchlist.filter((item) => {
+      if (monitorSignalFilter && (item.monitor_last_signal_level ?? "low") !== monitorSignalFilter) {
+        return false;
+      }
+      if (monitorIntervalFilter && (item.monitor_interval_minutes ?? 15) !== monitorIntervalFilter) {
+        return false;
+      }
+      if (!normalizedKeyword) {
+        return true;
+      }
+      const haystack = `${item.symbol} ${item.name} ${item.industry} ${item.group_name} ${item.monitor_last_summary ?? ""}`.toUpperCase();
+      return haystack.includes(normalizedKeyword);
+    });
+  }, [monitorEnabledWatchlist, monitorIntervalFilter, monitorKeyword, monitorSignalFilter]);
+
+  const monitorMediumSignalCount = useMemo(
+    () => watchlist.filter((item) => item.monitor_enabled && item.monitor_last_signal_level === "medium").length,
+    [watchlist],
+  );
+
+  const monitorHighSignalCount = useMemo(
+    () => watchlist.filter((item) => item.monitor_enabled && item.monitor_last_signal_level === "high").length,
+    [watchlist],
+  );
+
+  const monitorCheckedTodayCount = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return watchlist.filter((item) => item.monitor_last_checked_at?.slice(0, 10) === today).length;
+  }, [watchlist]);
+
   const filteredWatchlist = useMemo(() => {
     const normalizedKeyword = watchlistKeyword.trim().toUpperCase();
     return watchlist.filter((item) => {
@@ -264,6 +372,85 @@ function MyWorkspacePage() {
     navigate(`/stocks/${encodeURIComponent(symbol)}?source=my`, {
       state: { from: "/my" },
     });
+  };
+
+  const openWatchlistMonitor = (item: WatchlistItem) => {
+    setWatchlistMonitorItem(item);
+    watchlistMonitorForm.setFieldsValue({
+      monitor_enabled: item.monitor_enabled ?? false,
+      monitor_interval_minutes: item.monitor_interval_minutes ?? 15,
+      monitor_focus: item.monitor_focus && item.monitor_focus.length > 0 ? item.monitor_focus : ["price_move", "near_alert", "trend_breakout"],
+      alert_price_up: item.alert_price_up ?? undefined,
+      alert_price_down: item.alert_price_down ?? undefined,
+      note: item.note ?? undefined,
+    });
+    setWatchlistMonitorOpen(true);
+  };
+
+  const handleSaveWatchlistMonitor = async (values: WatchlistMonitorFormValues) => {
+    if (!watchlistMonitorItem) {
+      return;
+    }
+    setWatchlistMonitorSubmitting(true);
+    try {
+      const payload = {
+        monitor_enabled: values.monitor_enabled,
+        monitor_interval_minutes: values.monitor_interval_minutes,
+        monitor_focus: values.monitor_focus,
+        alert_price_up: values.alert_price_up,
+        alert_price_down: values.alert_price_down,
+        note: values.note?.trim(),
+      };
+      if (guestMode) {
+        const updated = updateGuestWatchlistItem(watchlistMonitorItem.id, payload);
+        if (!updated) {
+          throw new Error("自选项不存在");
+        }
+      } else {
+        await updateMyWatchlistItem(watchlistMonitorItem.id, payload);
+      }
+      message.success("盯盘设置已保存");
+      setWatchlistMonitorOpen(false);
+      setWatchlistMonitorItem(null);
+      await loadAll();
+    } catch (errorObject) {
+      const err = errorObject as Error;
+      message.error(`保存盯盘设置失败：${err.message}`);
+    } finally {
+      setWatchlistMonitorSubmitting(false);
+    }
+  };
+
+  const handleRunWatchlistMonitor = async (targetItem?: WatchlistItem) => {
+    const item = targetItem ?? watchlistMonitorItem;
+    if (!item) {
+      return;
+    }
+    if (guestMode) {
+      message.info("游客模式当前仅支持保存盯盘设置，登录后可执行服务端盯盘检查。", 3);
+      return;
+    }
+    setWatchlistMonitorRunning(true);
+    try {
+      const result = await runMyWatchlistMonitor(item.id);
+      message.success(result.created_notification ? "已完成盯盘检查并生成提醒" : "已完成盯盘检查");
+      await loadAll();
+      setWatchlistMonitorItem((current) =>
+        current && current.id === item.id
+          ? {
+              ...current,
+              monitor_last_checked_at: result.checked_at,
+              monitor_last_summary: result.summary,
+              monitor_last_signal_level: result.signal_level,
+            }
+          : current,
+      );
+    } catch (errorObject) {
+      const err = errorObject as Error;
+      message.error(`执行盯盘检查失败：${err.message}`);
+    } finally {
+      setWatchlistMonitorRunning(false);
+    }
   };
 
   const positionColumns = useMemo(
@@ -381,6 +568,52 @@ function MyWorkspacePage() {
     ],
     []
   );
+
+  const applyMonitorTemplate = (template: "steady" | "short_term" | "dividend") => {
+    const templateMap = {
+      steady: {
+        monitor_enabled: true,
+        monitor_interval_minutes: 15 as MonitorIntervalMinutes,
+        monitor_focus: ["price_move", "near_alert", "trend_breakout", "sector_rotation"],
+      },
+      short_term: {
+        monitor_enabled: true,
+        monitor_interval_minutes: 5 as MonitorIntervalMinutes,
+        monitor_focus: ["price_move", "turnover_spike", "trend_breakout"],
+      },
+      dividend: {
+        monitor_enabled: true,
+        monitor_interval_minutes: 30 as MonitorIntervalMinutes,
+        monitor_focus: ["near_alert", "sector_rotation"],
+      },
+    };
+    watchlistMonitorForm.setFieldsValue(templateMap[template]);
+  };
+
+  const handleBatchMonitorUpdate = async (payload: WatchlistItemUpdateRequest) => {
+    if (filteredMonitorWatchlist.length === 0) {
+      message.info("当前筛选结果为空");
+      return;
+    }
+    setWatchlistMonitorBatchSaving(true);
+    try {
+      if (guestMode) {
+        for (const item of filteredMonitorWatchlist) {
+          updateGuestWatchlistItem(item.id, payload);
+        }
+      } else {
+        await Promise.all(filteredMonitorWatchlist.map((item) => updateMyWatchlistItem(item.id, payload)));
+      }
+      message.success(`已批量更新 ${filteredMonitorWatchlist.length} 只股票的盯盘设置`);
+      await loadAll();
+    } catch (errorObject) {
+      const err = errorObject as Error;
+      message.error(`批量更新失败：${err.message}`);
+    } finally {
+      setWatchlistMonitorBatchSaving(false);
+    }
+  };
+
 
   const handleDeleteWatchlistItem = async (itemId: number) => {
     try {
@@ -529,6 +762,16 @@ function MyWorkspacePage() {
                         onClick={() => openWatchlistDetail(item.symbol)}
                         actions={[
                           <Button
+                            key={`watch-monitor-${item.id}`}
+                            type="link"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openWatchlistMonitor(item);
+                            }}
+                          >
+                            盯盘设置
+                          </Button>,
+                          <Button
                             key={`watch-detail-${item.id}`}
                             type="link"
                             onClick={(event) => {
@@ -565,6 +808,16 @@ function MyWorkspacePage() {
                               <Space wrap>
                                 <Tag color="blue">{item.group_name}</Tag>
                                 <Tag color={item.change_pct >= 0 ? "green" : "red"}>{toSignedPercent(item.change_pct)}</Tag>
+                                <Tag color={item.monitor_enabled ? "processing" : "default"}>
+                                  {item.monitor_enabled ? `盯盘 ${item.monitor_interval_minutes ?? 15}m` : "未盯盘"}
+                                </Tag>
+                                {item.monitor_focus && item.monitor_focus.length > 0
+                                  ? item.monitor_focus.slice(0, 3).map((focus) => (
+                                      <Tag key={`${item.id}-${focus}`} bordered={false} color="purple">
+                                        {monitorFocusLabel(focus)}
+                                      </Tag>
+                                    ))
+                                  : null}
                                 {item.tags.length > 0
                                   ? item.tags.slice(0, 6).map((tag) => (
                                       <Tag key={`${item.id}-${tag}`} bordered={false}>
@@ -573,10 +826,213 @@ function MyWorkspacePage() {
                                     ))
                                   : <Text type="secondary">暂无标签</Text>}
                               </Space>
+                              {item.monitor_last_summary ? <Text type="secondary">最近盯盘：{item.monitor_last_summary}</Text> : null}
+                              {item.monitor_last_checked_at ? <Text type="secondary">最近检查：{new Date(item.monitor_last_checked_at).toLocaleString()}</Text> : null}
                               {item.note ? <Text type="secondary">备注：{item.note}</Text> : null}
                             </Space>
                           }
                         />
+                      </List.Item>
+                    )}
+                  />
+                </Card>
+              </Space>
+            ),
+          },
+          {
+            key: "monitor",
+            label: `盯盘中心 (${monitorEnabledWatchlist.length})`,
+            children: (
+              <Space direction="vertical" size={16} style={{ width: "100%" }}>
+                <Row gutter={[12, 12]}>
+                  <Col xs={12} md={6}>
+                    <Card loading={loading}>
+                      <Statistic title="已开启盯盘" value={monitorEnabledWatchlist.length} />
+                    </Card>
+                  </Col>
+                  <Col xs={12} md={6}>
+                    <Card loading={loading}>
+                      <Statistic title="高优先级信号" value={monitorHighSignalCount} />
+                    </Card>
+                  </Col>
+                  <Col xs={12} md={6}>
+                    <Card loading={loading}>
+                      <Statistic title="今日已检查" value={monitorCheckedTodayCount} />
+                    </Card>
+                  </Col>
+                  <Col xs={12} md={6}>
+                    <Card loading={loading}>
+                      <Statistic title="盯盘提醒" value={recentMonitorNotifications.length} />
+                    </Card>
+                  </Col>
+                </Row>
+
+                <Card
+                  title="盯盘操作"
+                  extra={
+                    <Space>
+                      {!guestMode ? (
+                        <Button
+                          loading={watchlistMonitorRunning}
+                          onClick={() =>
+                            void (async () => {
+                              setWatchlistMonitorRunning(true);
+                              try {
+                                const result = await runMyWatchlistMonitorAll();
+                                message.success(`已检查 ${result.checked_count} 只股票，新增 ${result.created_notification_count} 条盯盘提醒`);
+                                await loadAll();
+                              } catch (errorObject) {
+                                const err = errorObject as Error;
+                                message.error(`批量盯盘失败：${err.message}`);
+                              } finally {
+                                setWatchlistMonitorRunning(false);
+                              }
+                            })()
+                          }
+                        >
+                          全部检查
+                        </Button>
+                      ) : null}
+                      <Button onClick={() => void loadAll()}>刷新数据</Button>
+                    </Space>
+                  }
+                >
+                  <Space direction="vertical" size={12} style={{ width: "100%" }}>
+                    <Text type="secondary">
+                      盯盘中心会根据你在“我的股票”中配置的频率与规则，周期检查价格异动、接近预警价、技术位与板块联动，并将重要结果写入消息中心。
+                    </Text>
+                    <Space wrap>
+                      <Button loading={watchlistMonitorBatchSaving} onClick={() => void handleBatchMonitorUpdate({ monitor_enabled: true, monitor_interval_minutes: 5, monitor_focus: ["price_move", "turnover_spike", "trend_breakout"] })}>
+                        批量切换为 5m
+                      </Button>
+                      <Button loading={watchlistMonitorBatchSaving} onClick={() => void handleBatchMonitorUpdate({ monitor_enabled: true, monitor_interval_minutes: 15, monitor_focus: ["price_move", "near_alert", "trend_breakout", "sector_rotation"] })}>
+                        批量切换为 15m
+                      </Button>
+                      <Button danger loading={watchlistMonitorBatchSaving} onClick={() => void handleBatchMonitorUpdate({ monitor_enabled: false })}>
+                        批量关闭盯盘
+                      </Button>
+                    </Space>
+                  </Space>
+                </Card>
+
+                <Card title={`盯盘股票（${filteredMonitorWatchlist.length} / 已开启 ${monitorEnabledWatchlist.length}）`} loading={loading}>
+                  <Space direction="vertical" size={12} style={{ width: "100%" }}>
+                    <Row gutter={12}>
+                      <Col xs={24} md={10}>
+                        <Input
+                          allowClear
+                          value={monitorKeyword}
+                          placeholder="按代码、名称、摘要搜索"
+                          onChange={(event) => setMonitorKeyword(event.target.value)}
+                        />
+                      </Col>
+                      <Col xs={12} md={7}>
+                        <Select
+                          allowClear
+                          value={monitorSignalFilter}
+                          style={{ width: "100%" }}
+                          placeholder="按信号级别筛选"
+                          options={[
+                            { label: "高优先级", value: "high" },
+                            { label: "中优先级", value: "medium" },
+                            { label: "低优先级", value: "low" },
+                          ]}
+                          onChange={(value) => setMonitorSignalFilter((value as string | undefined) ?? undefined)}
+                        />
+                      </Col>
+                      <Col xs={12} md={7}>
+                        <Select<MonitorIntervalMinutes>
+                          allowClear
+                          value={monitorIntervalFilter}
+                          style={{ width: "100%" }}
+                          placeholder="按频率筛选"
+                          options={WATCHLIST_MONITOR_INTERVAL_OPTIONS}
+                          onChange={(value) => setMonitorIntervalFilter((value as MonitorIntervalMinutes | undefined) ?? undefined)}
+                        />
+                      </Col>
+                    </Row>
+
+                    <Space wrap>
+                      <Tag color="red">高优先级 {monitorHighSignalCount}</Tag>
+                      <Tag color="gold">中优先级 {monitorMediumSignalCount}</Tag>
+                      <Tag color="processing">今日已检查 {monitorCheckedTodayCount}</Tag>
+                    </Space>
+
+                    <List
+                      dataSource={filteredMonitorWatchlist}
+                      locale={{ emptyText: "当前没有开启盯盘的股票，先去自选列表里开启一只。" }}
+                      pagination={{ pageSize: 8 }}
+                      renderItem={(item) => (
+                      <List.Item
+                        actions={[
+                          <Button
+                            key={`monitor-run-${item.id}`}
+                            type="link"
+                            onClick={() => void handleRunWatchlistMonitor(item)}
+                          >
+                            立即检查
+                          </Button>,
+                          <Button
+                            key={`monitor-setting-${item.id}`}
+                            type="link"
+                            onClick={() => openWatchlistMonitor(item)}
+                          >
+                            设置
+                          </Button>,
+                          <Button
+                            key={`monitor-detail-${item.id}`}
+                            type="link"
+                            onClick={() => openWatchlistDetail(item.symbol)}
+                          >
+                            详情
+                          </Button>,
+                        ]}
+                      >
+                        <List.Item.Meta
+                          title={`${item.name}（${item.symbol}）`}
+                          description={
+                            <Space direction="vertical" size={4}>
+                              <Space wrap>
+                                <Tag color="processing">频率 {item.monitor_interval_minutes ?? 15}m</Tag>
+                                <Tag color={item.monitor_last_signal_level === "high" ? "red" : item.monitor_last_signal_level === "medium" ? "gold" : "default"}>
+                                  信号 {item.monitor_last_signal_level ?? "low"}
+                                </Tag>
+                                {(item.monitor_focus ?? []).slice(0, 4).map((focus) => (
+                                  <Tag key={`${item.id}-${focus}`} bordered={false} color="purple">
+                                    {monitorFocusLabel(focus)}
+                                  </Tag>
+                                ))}
+                              </Space>
+                              <Text type="secondary">
+                                现价：{item.current_price.toFixed(2)} / 涨跌幅：
+                                <Text style={{ color: item.change_pct >= 0 ? "#389e0d" : "#cf1322" }}>{toSignedPercent(item.change_pct)}</Text>
+                              </Text>
+                              <Text type="secondary">最近检查：{item.monitor_last_checked_at ? new Date(item.monitor_last_checked_at).toLocaleString() : "暂无"}</Text>
+                              <Text type="secondary">最近摘要：{item.monitor_last_summary ?? "暂无盯盘摘要"}</Text>
+                            </Space>
+                          }
+                        />
+                      </List.Item>
+                    )}
+                    />
+                  </Space>
+                </Card>
+
+                <Card title={`最近盯盘提醒（${recentMonitorNotifications.length}）`} loading={loading}>
+                  <List
+                    dataSource={recentMonitorNotifications}
+                    locale={{ emptyText: "暂无盯盘提醒，执行一次检查或等待周期扫描。" }}
+                    renderItem={(item) => (
+                      <List.Item>
+                        <Space direction="vertical" size={2} style={{ width: "100%" }}>
+                          <Space wrap>
+                            <Tag color="purple">盯盘提醒</Tag>
+                            {item.symbol ? <Tag>{item.symbol}</Tag> : null}
+                            <Text strong>{item.title}</Text>
+                          </Space>
+                          <Text type="secondary">{item.content}</Text>
+                          <Text type="secondary">{new Date(item.created_at).toLocaleString()}</Text>
+                        </Space>
                       </List.Item>
                     )}
                   />
@@ -743,6 +1199,98 @@ function MyWorkspacePage() {
           },
         ]}
       />
+
+      <Drawer
+        title={watchlistMonitorItem ? `盯盘设置 · ${watchlistMonitorItem.name}（${watchlistMonitorItem.symbol}）` : "盯盘设置"}
+        open={watchlistMonitorOpen}
+        width={520}
+        onClose={() => {
+          setWatchlistMonitorOpen(false);
+          setWatchlistMonitorItem(null);
+        }}
+        destroyOnHidden
+        extra={
+          <Space>
+            {!guestMode ? (
+              <Button loading={watchlistMonitorRunning} onClick={() => void handleRunWatchlistMonitor()}>
+                立即检查
+              </Button>
+            ) : null}
+            <Button type="primary" loading={watchlistMonitorSubmitting} onClick={() => watchlistMonitorForm.submit()}>
+              保存设置
+            </Button>
+          </Space>
+        }
+      >
+        <Space direction="vertical" size={16} style={{ width: "100%" }}>
+          <Alert
+            type={guestMode ? "warning" : "info"}
+            showIcon
+            message={guestMode ? "游客模式仅保存盯盘配置，登录后可接入服务端自动提醒。" : "系统会按频率对这只股票执行盯盘检查，并将重要信号写入消息中心。"}
+          />
+
+          {watchlistMonitorItem ? (
+            <Descriptions size="small" column={2} bordered>
+              <Descriptions.Item label="现价">{watchlistMonitorItem.current_price.toFixed(2)}</Descriptions.Item>
+              <Descriptions.Item label="涨跌幅">
+                <Text style={{ color: watchlistMonitorItem.change_pct >= 0 ? "#389e0d" : "#cf1322" }}>
+                  {toSignedPercent(watchlistMonitorItem.change_pct)}
+                </Text>
+              </Descriptions.Item>
+              <Descriptions.Item label="最近检查">
+                {watchlistMonitorItem.monitor_last_checked_at ? new Date(watchlistMonitorItem.monitor_last_checked_at).toLocaleString() : "暂无"}
+              </Descriptions.Item>
+              <Descriptions.Item label="最近信号级别">{watchlistMonitorItem.monitor_last_signal_level ?? "暂无"}</Descriptions.Item>
+              <Descriptions.Item label="最近摘要" span={2}>
+                {watchlistMonitorItem.monitor_last_summary ?? "暂无盯盘摘要"}
+              </Descriptions.Item>
+            </Descriptions>
+          ) : null}
+
+          <Card size="small" title="盯盘模板">
+            <Space wrap>
+              <Button onClick={() => applyMonitorTemplate("steady")}>稳健跟踪</Button>
+              <Button onClick={() => applyMonitorTemplate("short_term")}>短线波动</Button>
+              <Button onClick={() => applyMonitorTemplate("dividend")}>分红防守</Button>
+            </Space>
+          </Card>
+
+          <Form<WatchlistMonitorFormValues>
+            form={watchlistMonitorForm}
+            layout="vertical"
+            onFinish={handleSaveWatchlistMonitor}
+            initialValues={{
+              monitor_enabled: false,
+              monitor_interval_minutes: 15,
+              monitor_focus: ["price_move", "near_alert", "trend_breakout"],
+            }}
+          >
+            <Form.Item label="启用盯盘" name="monitor_enabled" valuePropName="checked">
+              <Switch checkedChildren="开启" unCheckedChildren="关闭" />
+            </Form.Item>
+
+            <Form.Item label="检查频率" name="monitor_interval_minutes">
+              <Select options={WATCHLIST_MONITOR_INTERVAL_OPTIONS} />
+            </Form.Item>
+
+            <Form.Item label="重点规则" name="monitor_focus">
+              <Select mode="multiple" options={WATCHLIST_MONITOR_FOCUS_OPTIONS} placeholder="选择盯盘规则" />
+            </Form.Item>
+
+            <Form.Item label="上沿提醒价" name="alert_price_up">
+              <InputNumber min={0} style={{ width: "100%" }} placeholder="可选" />
+            </Form.Item>
+
+            <Form.Item label="下沿提醒价" name="alert_price_down">
+              <InputNumber min={0} style={{ width: "100%" }} placeholder="可选" />
+            </Form.Item>
+
+            <Form.Item label="备注" name="note">
+              <TextArea rows={3} placeholder="记录你想盯盘时重点观察的逻辑，例如：放量突破、接近目标价、板块共振。" />
+            </Form.Item>
+          </Form>
+        </Space>
+      </Drawer>
     </Space>
   );
 }

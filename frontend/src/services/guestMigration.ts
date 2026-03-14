@@ -62,6 +62,9 @@ export async function migrateGuestDataToCurrentUser(): Promise<GuestMigrationRes
           alert_price_up: item.alert_price_up ?? undefined,
           alert_price_down: item.alert_price_down ?? undefined,
           target_position_pct: item.target_position_pct ?? undefined,
+          monitor_enabled: item.monitor_enabled ?? false,
+          monitor_interval_minutes: item.monitor_interval_minutes ?? 15,
+          monitor_focus: item.monitor_focus ?? undefined,
         });
         importedWatchlist += 1;
         existingWatchSymbols.add(symbol);

@@ -13,6 +13,8 @@ from app.schemas.account import (
     NotificationRefreshResponse,
     NotificationSetting,
     NotificationSettingUpdate,
+    WatchlistMonitorBatchRunResponse,
+    WatchlistMonitorRunResponse,
     PositionAnalysisResponse,
     PositionCreate,
     PositionFollowUpCreate,
@@ -47,6 +49,8 @@ from app.services.notification_service import (
     list_user_notifications,
     mark_user_notification_read,
     refresh_user_notifications,
+    refresh_watch_monitor_for_item,
+    refresh_watch_monitor_for_user,
     update_user_notification_setting,
 )
 
@@ -84,6 +88,26 @@ def update_watchlist_endpoint(
     if item is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="自选项不存在")
     return item
+
+
+@router.post("/watchlist/{item_id}/monitor/run", response_model=WatchlistMonitorRunResponse)
+def run_watchlist_monitor_endpoint(
+    item_id: int,
+    user: AppUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> WatchlistMonitorRunResponse:
+    result = refresh_watch_monitor_for_item(db=db, user_id=user.id, item_id=item_id)
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="自选项不存在")
+    return result
+
+
+@router.post("/watchlist/monitor/run-all", response_model=WatchlistMonitorBatchRunResponse)
+def run_watchlist_monitor_all_endpoint(
+    user: AppUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> WatchlistMonitorBatchRunResponse:
+    return refresh_watch_monitor_for_user(db=db, user_id=user.id)
 
 
 @router.delete("/watchlist/{item_id}", status_code=status.HTTP_204_NO_CONTENT)

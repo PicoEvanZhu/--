@@ -83,6 +83,59 @@ body {
   gap: 12px;
 }
 
+.top-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.top-header-action {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 10px;
+}
+
+.top-header-avatar-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.top-header-avatar {
+  background: linear-gradient(135deg, #5cc8ff 0%, #1677ff 100%);
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  border: 2px solid #fff;
+  box-shadow: 0 6px 14px rgba(22, 119, 255, 0.18);
+}
+
+.top-header-action:not(.ant-btn-primary) {
+  border-color: #d8e1ef;
+  background: #fff;
+}
+
+.top-header-icon-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.top-header-badge .ant-badge-count {
+  top: -6px;
+  right: -6px;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.96);
+}
+
 .app-content {
   min-height: 0;
   padding: 20px;
@@ -245,6 +298,12 @@ body {
 .stocks-page .stocks-topic-card-title-desc {
   font-size: 12px;
   line-height: 1.4;
+}
+
+.stocks-page .stocks-topic-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .stocks-page .stocks-topic-card {

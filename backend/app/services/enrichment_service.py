@@ -8,8 +8,10 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar
 
 from sqlalchemy import func
+from sqlalchemy.exc import OperationalError, PendingRollbackError
 from sqlalchemy.orm import Session
 
+from app.core.database import SessionLocal
 from app.models.stock_enrichment import StockEnrichment
 from app.models.stock_universe import StockUniverse
 from app.schemas.stock import (
@@ -950,6 +952,7 @@ def enrich_single_stock(
     row: StockUniverse,
     force: bool = False,
 ) -> Tuple[str, float]:
+    db.rollback()
     existing = get_stock_enrichment(db, row.symbol)
 
     if existing is not None and not force:
@@ -958,40 +961,53 @@ def enrich_single_stock(
             return "skipped", existing.coverage_score or 0.0
 
     payload = _build_enrichment_payload(row)
+    status = payload.get("status") or "partial"
+    coverage_score = payload.get("coverage_score") or 0.0
+    updated_at = payload.get("updated_at") or _utc_now()
 
-    record = existing if existing is not None else StockEnrichment(symbol=row.symbol)
-    record.source = payload["source"]
-    record.status = payload["status"]
-    record.coverage_score = payload["coverage_score"]
-    record.company_full_name = payload["company_full_name"]
-    record.english_name = payload["english_name"]
-    record.listing_date = payload["listing_date"]
-    record.company_website = payload["company_website"]
-    record.investor_relations_url = payload["investor_relations_url"]
-    record.exchange_profile_url = payload["exchange_profile_url"]
-    record.quote_url = payload["quote_url"]
-    record.headquarters = payload["headquarters"]
-    record.legal_representative = payload["legal_representative"]
-    record.employees = payload["employees"]
-    record.main_business = payload["main_business"]
-    record.company_intro = payload["company_intro"]
-    record.products_services_json = payload["products_services_json"]
-    record.key_risks_json = payload["key_risks_json"]
-    record.catalyst_events_json = payload["catalyst_events_json"]
-    record.news_highlights_json = payload["news_highlights_json"]
-    record.financial_reports_json = payload["financial_reports_json"]
-    record.valuation_history_json = payload["valuation_history_json"]
-    record.dividend_history_json = payload["dividend_history_json"]
-    record.shareholder_structure_json = payload["shareholder_structure_json"]
-    record.peer_companies_json = payload["peer_companies_json"]
-    record.raw_payload_json = payload["raw_payload_json"]
-    record.updated_at = payload["updated_at"]
+    insert_payload = {
+        "symbol": row.symbol,
+        "source": payload.get("source") or "mixed_web_sources",
+        "status": status,
+        "coverage_score": coverage_score,
+        "company_full_name": payload.get("company_full_name"),
+        "english_name": payload.get("english_name"),
+        "listing_date": payload.get("listing_date"),
+        "company_website": payload.get("company_website"),
+        "investor_relations_url": payload.get("investor_relations_url"),
+        "exchange_profile_url": payload.get("exchange_profile_url"),
+        "quote_url": payload.get("quote_url"),
+        "headquarters": payload.get("headquarters"),
+        "legal_representative": payload.get("legal_representative"),
+        "employees": payload.get("employees"),
+        "main_business": payload.get("main_business"),
+        "company_intro": payload.get("company_intro"),
+        "products_services_json": payload.get("products_services_json"),
+        "key_risks_json": payload.get("key_risks_json"),
+        "catalyst_events_json": payload.get("catalyst_events_json"),
+        "news_highlights_json": payload.get("news_highlights_json"),
+        "financial_reports_json": payload.get("financial_reports_json"),
+        "valuation_history_json": payload.get("valuation_history_json"),
+        "dividend_history_json": payload.get("dividend_history_json"),
+        "shareholder_structure_json": payload.get("shareholder_structure_json"),
+        "peer_companies_json": payload.get("peer_companies_json"),
+        "raw_payload_json": payload.get("raw_payload_json"),
+        "updated_at": updated_at,
+    }
 
-    db.add(record)
+    if existing is None:
+        db.add(StockEnrichment(**insert_payload))
+        db.commit()
+        time.sleep(_YF_CALL_GAP_SECONDS)
+        return status, coverage_score
+
+    update_payload = dict(insert_payload)
+    update_payload.pop("symbol", None)
+    db.query(StockEnrichment).filter(StockEnrichment.id == existing.id).update(update_payload)
     db.commit()
 
     time.sleep(_YF_CALL_GAP_SECONDS)
-    return record.status, record.coverage_score or 0.0
+    return status, coverage_score
 
 
 def enrich_stock_universe(
@@ -1008,33 +1024,57 @@ def enrich_stock_universe(
         query = query.filter(StockUniverse.market == market)
 
     rows = query.order_by(StockUniverse.symbol.asc()).all()
-    total = len(rows)
+    row_ids = [row.id for row in rows]
+    total = len(row_ids)
 
     if limit is not None:
-        rows = rows[: max(0, limit)]
+        row_ids = row_ids[: max(0, limit)]
 
     processed = 0
     success_count = 0
     failed_count = 0
     skipped_count = 0
 
-    for row in rows:
-        processed += 1
+    def _new_session() -> Session:
         try:
-            status, coverage = enrich_single_stock(db=db, row=row, force=force)
-            if status == "skipped":
-                skipped_count += 1
-            elif status == "success":
-                success_count += 1
-            else:
-                success_count += 1
+            db.close()
+        except Exception:
+            pass
+        return SessionLocal()
 
-            if processed % 50 == 0:
-                logger.info("enrich progress %s/%s symbol=%s coverage=%s", processed, len(rows), row.symbol, coverage)
-        except Exception as exc:
-            failed_count += 1
-            logger.exception("enrich failed for %s: %s", row.symbol, exc)
-            db.rollback()
+    for row_id in row_ids:
+        processed += 1
+        for attempt in range(2):
+            try:
+                if attempt == 0:
+                    db.rollback()
+                row = db.query(StockUniverse).filter(StockUniverse.id == row_id).first()
+                if row is None:
+                    failed_count += 1
+                    logger.exception("enrich failed for id=%s: stock not found", row_id)
+                    break
+
+                status, coverage = enrich_single_stock(db=db, row=row, force=force)
+                if status == "skipped":
+                    skipped_count += 1
+                elif status == "success":
+                    success_count += 1
+                else:
+                    success_count += 1
+
+                if processed % 50 == 0:
+                    logger.info("enrich progress %s/%s symbol=%s coverage=%s", processed, len(row_ids), row.symbol, coverage)
+                break
+            except (OperationalError, PendingRollbackError) as exc:
+                logger.exception("enrich db error for id=%s (attempt %s): %s", row_id, attempt + 1, exc)
+                db = _new_session()
+                if attempt == 1:
+                    failed_count += 1
+            except Exception as exc:
+                failed_count += 1
+                logger.exception("enrich failed for id=%s: %s", row_id, exc)
+                db = _new_session()
+                break
 
         if sleep_ms > 0:
             time.sleep(sleep_ms / 1000.0)

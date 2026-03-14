@@ -28,7 +28,7 @@ if [[ -n "$session_ids" ]]; then
   done <<< "$session_ids"
 fi
 
-cmd="cd \"$ROOT_DIR\" && backend/.venv/bin/python scripts/enrich_universe.py --sleep-ms $SLEEP_MS"
+cmd="cd \"$ROOT_DIR\" && DATABASE_URL='${DATABASE_URL:-}' backend/.venv/bin/python scripts/enrich_universe.py --sleep-ms $SLEEP_MS"
 if [[ "$FORCE_FLAG" == "true" ]]; then
   cmd+=" --force"
 fi

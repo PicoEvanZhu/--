@@ -1,6 +1,8 @@
 export type MarketType = "A股" | "港股" | "创业板" | "科创板" | "美股";
 export type RecommendationType = "buy" | "watch" | "hold_cautious" | "avoid";
 export type RiskLevel = "low" | "medium" | "high";
+export type MainForceStage = "accumulation" | "pullback" | "markup" | "distribution" | "neutral";
+export type MainForceSignalLevel = "high" | "medium" | "low";
 export type TradeReviewAction = "buy" | "sell" | "add" | "reduce" | "observe";
 export type FollowUpStatus = "open" | "in_progress" | "closed";
 
@@ -40,6 +42,56 @@ export interface StockItem {
   is_high_dividend?: boolean;
   is_ex_dividend_soon?: boolean;
   updated_at?: string | null;
+}
+
+export interface MainForceMetrics {
+  range_20: number;
+  range_60: number;
+  range_squeeze: number;
+  vol_20: number;
+  vol_60: number;
+  vol_squeeze: number;
+  obv_slope_20: number;
+  up_volume_ratio_20: number;
+  close_slope_60: number;
+  drawdown_60: number;
+}
+
+export interface MainForceCandidate {
+  symbol: string;
+  name: string;
+  market: MarketType;
+  price: number;
+  change_pct: number;
+  score: number;
+  stage: MainForceStage;
+  signal_level: MainForceSignalLevel;
+  reason: string;
+  metrics: MainForceMetrics;
+  sentiment_score?: number | null;
+  sentiment_summary?: string | null;
+  sentiment_sources?: number;
+  llm_summary?: string | null;
+}
+
+export interface MainForceScanResponse {
+  generated_at: string;
+  total_scanned: number;
+  candidates: MainForceCandidate[];
+}
+
+export interface MainForceSettingResponse {
+  enabled: boolean;
+  scan_interval_minutes: number;
+  overrides: Record<string, number | boolean>;
+  effective: Record<string, number | boolean>;
+  last_run_at?: string | null;
+}
+
+export interface MainForceSettingUpdate {
+  enabled?: boolean;
+  scan_interval_minutes?: number;
+  overrides?: Record<string, number | boolean | null>;
 }
 
 export interface FinancialReport {

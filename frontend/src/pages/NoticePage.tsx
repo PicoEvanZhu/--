@@ -28,6 +28,9 @@ function categoryLabel(category: NotificationItem["category"]): string {
   if (category === "report_alert") {
     return "财报提醒";
   }
+  if (category === "watch_monitor") {
+    return "盯盘提醒";
+  }
   return "跟进到期";
 }
 
@@ -37,6 +40,9 @@ function categoryColor(category: NotificationItem["category"]): string {
   }
   if (category === "report_alert") {
     return "blue";
+  }
+  if (category === "watch_monitor") {
+    return "purple";
   }
   return "volcano";
 }
@@ -276,6 +282,14 @@ function NoticePage() {
               onChange={(checked) => void handleUpdateSetting({ enable_followup_due_alert: checked })}
             />
             <Text>跟进提醒（复盘任务到期）</Text>
+          </Space>
+          <Space>
+            <Switch
+              checked={settings?.enable_watch_monitor_alert ?? false}
+              loading={savingSetting}
+              onChange={(checked) => void handleUpdateSetting({ enable_watch_monitor_alert: checked })}
+            />
+            <Text>盯盘提醒（自选股周期扫描）</Text>
           </Space>
         </Space>
       </Card>

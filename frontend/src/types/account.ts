@@ -52,6 +52,8 @@ export interface PasswordResetResponse {
   message: string;
 }
 
+export type MonitorIntervalMinutes = 1 | 5 | 10 | 15 | 30 | 60;
+
 export interface WatchlistItem {
   id: number;
   symbol: string;
@@ -66,6 +68,13 @@ export interface WatchlistItem {
   alert_price_up?: number | null;
   alert_price_down?: number | null;
   target_position_pct?: number | null;
+  monitor_enabled?: boolean;
+  monitor_interval_minutes?: MonitorIntervalMinutes;
+  monitor_focus?: string[];
+  monitor_last_checked_at?: string | null;
+  monitor_last_summary?: string | null;
+  monitor_last_signal_level?: string | null;
+  monitor_last_notified_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -84,6 +93,9 @@ export interface WatchlistItemCreateRequest {
   alert_price_up?: number;
   alert_price_down?: number;
   target_position_pct?: number;
+  monitor_enabled?: boolean;
+  monitor_interval_minutes?: MonitorIntervalMinutes;
+  monitor_focus?: string[];
 }
 
 export interface WatchlistItemUpdateRequest {
@@ -93,6 +105,9 @@ export interface WatchlistItemUpdateRequest {
   alert_price_up?: number;
   alert_price_down?: number;
   target_position_pct?: number;
+  monitor_enabled?: boolean;
+  monitor_interval_minutes?: MonitorIntervalMinutes;
+  monitor_focus?: string[];
 }
 
 export interface PositionSnapshot {
@@ -204,12 +219,13 @@ export interface PositionFollowUpUpdateRequest {
   discipline_score?: number;
 }
 
-export type NotificationCategory = "price_alert" | "report_alert" | "followup_due";
+export type NotificationCategory = "price_alert" | "report_alert" | "followup_due" | "watch_monitor";
 
 export interface NotificationSetting {
   enable_price_alert: boolean;
   enable_report_alert: boolean;
   enable_followup_due_alert: boolean;
+  enable_watch_monitor_alert: boolean;
   updated_at: string;
 }
 
@@ -217,6 +233,7 @@ export interface NotificationSettingUpdateRequest {
   enable_price_alert?: boolean;
   enable_report_alert?: boolean;
   enable_followup_due_alert?: boolean;
+  enable_watch_monitor_alert?: boolean;
 }
 
 export interface NotificationItem {
@@ -244,4 +261,45 @@ export interface NotificationRefreshResponse {
 
 export interface NotificationReadResponse {
   item: NotificationItem;
+}
+
+export interface WatchlistMonitorRunResponse {
+  item_id: number;
+  symbol: string;
+  summary: string;
+  signal_level: string;
+  checked_at: string;
+  created_notification: boolean;
+}
+
+export interface WatchlistMonitorBatchRunResponse {
+  checked_count: number;
+  created_notification_count: number;
+  high_signal_count: number;
+  medium_signal_count: number;
+  low_signal_count: number;
+  checked_at: string;
+}
+
+export interface WatchlistMonitorDailyReportItem {
+  item_id: number;
+  symbol: string;
+  name: string;
+  signal_level: string;
+  summary: string;
+  interval_minutes: number;
+  last_checked_at?: string | null;
+}
+
+export interface WatchlistMonitorDailyReportResponse {
+  generated_at: string;
+  total_enabled: number;
+  checked_today_count: number;
+  high_signal_count: number;
+  medium_signal_count: number;
+  low_signal_count: number;
+  overview: string;
+  highlights: string[];
+  action_items: string[];
+  focus_items: WatchlistMonitorDailyReportItem[];
 }

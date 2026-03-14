@@ -26,6 +26,8 @@ import type {
   WatchlistItemCreateRequest,
   WatchlistItemUpdateRequest,
   WatchlistListResponse,
+  WatchlistMonitorBatchRunResponse,
+  WatchlistMonitorRunResponse,
 } from "../types/account";
 
 export async function register(payload: RegisterRequest): Promise<AuthTokenResponse> {
@@ -91,6 +93,20 @@ export async function updateMyWatchlistItem(itemId: number, payload: WatchlistIt
     path: `/me/watchlist/${itemId}`,
     method: "PATCH",
     body: JSON.stringify(payload),
+  });
+}
+
+export async function runMyWatchlistMonitor(itemId: number): Promise<WatchlistMonitorRunResponse> {
+  return request<WatchlistMonitorRunResponse>({
+    path: `/me/watchlist/${itemId}/monitor/run`,
+    method: "POST",
+  });
+}
+
+export async function runMyWatchlistMonitorAll(): Promise<WatchlistMonitorBatchRunResponse> {
+  return request<WatchlistMonitorBatchRunResponse>({
+    path: `/me/watchlist/monitor/run-all`,
+    method: "POST",
   });
 }
 

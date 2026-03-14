@@ -281,6 +281,8 @@ export default function StockKLineChart({ points, height = DEFAULT_HEIGHT }: Sto
             border: "1px solid #e5e7eb",
             background: "rgba(255,255,255,0.96)",
             boxShadow: "0 10px 26px rgba(15, 23, 42, 0.10)",
+            pointerEvents: "none",
+            userSelect: "none",
           }}
         >
           <div style={{ marginBottom: 6, fontWeight: 600 }}>{formatTooltipTime(hover.point.date)}</div>

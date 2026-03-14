@@ -8,6 +8,9 @@ from app.core.database import get_db
 from app.models.user_platform import AppUser
 from app.schemas.stock import (
     MarketType,
+    MainForceScanResponse,
+    MainForceSettingResponse,
+    MainForceSettingUpdate,
     RecommendationType,
     StockEnrichResponse,
     StockEnrichStatusResponse,
@@ -26,6 +29,7 @@ from app.schemas.stock import (
     StockTradeReviewUpdate,
 )
 from app.services.enrichment_service import enrich_stock_universe, get_enrichment_status
+from app.services.main_force_service import get_latest_scan, get_main_force_setting_payload, scan_main_force_candidates, update_main_force_setting
 from app.services.stock_service import (
     ask_stock_question,
     get_sector_rotation_summary,
@@ -165,6 +169,54 @@ def enrich_stocks(
 @router.get("/enrich/status", response_model=StockEnrichStatusResponse)
 def get_enrich_status(db: Session = Depends(get_db)) -> StockEnrichStatusResponse:
     return get_enrichment_status(db=db)
+
+
+@router.get("/main-force/scan", response_model=MainForceScanResponse)
+def scan_main_force(
+    market: Optional[MarketType] = Query(default="A股"),
+    limit: Optional[int] = Query(default=None, ge=50, le=2000),
+    top_n: Optional[int] = Query(default=None, ge=5, le=200),
+    with_llm: Optional[bool] = Query(default=None),
+    llm_top_n: Optional[int] = Query(default=None, ge=0, le=50),
+    with_web: Optional[bool] = Query(default=None),
+    sentiment_top_n: Optional[int] = Query(default=None, ge=0, le=200),
+    use_settings: bool = Query(default=True),
+    persist: bool = Query(default=True),
+    db: Session = Depends(get_db),
+) -> MainForceScanResponse:
+    return scan_main_force_candidates(
+        db=db,
+        market=market,
+        limit=limit,
+        top_n=top_n,
+        with_llm=with_llm,
+        llm_top_n=llm_top_n,
+        with_web=with_web,
+        sentiment_top_n=sentiment_top_n,
+        use_settings=use_settings,
+        persist=persist,
+    )
+
+
+@router.get("/main-force/latest", response_model=MainForceScanResponse)
+def get_main_force_latest(db: Session = Depends(get_db)) -> MainForceScanResponse:
+    latest = get_latest_scan(db=db)
+    if latest is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="暂无扫描结果")
+    return latest
+
+
+@router.get("/main-force/settings", response_model=MainForceSettingResponse)
+def get_main_force_settings(db: Session = Depends(get_db)) -> MainForceSettingResponse:
+    return MainForceSettingResponse(**get_main_force_setting_payload(db=db))
+
+
+@router.patch("/main-force/settings", response_model=MainForceSettingResponse)
+def update_main_force_settings(
+    payload: MainForceSettingUpdate,
+    db: Session = Depends(get_db),
+) -> MainForceSettingResponse:
+    return MainForceSettingResponse(**update_main_force_setting(db=db, payload=payload.model_dump()))
 
 
 @router.get("/{symbol}/reviews", response_model=StockTradeReviewResponse)

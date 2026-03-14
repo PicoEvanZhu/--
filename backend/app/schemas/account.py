@@ -8,7 +8,7 @@ FollowUpStatus = Literal["open", "in_progress", "closed"]
 FollowUpStage = Literal["pre_open", "holding", "rebalancing", "exit_review"]
 PositionStatus = Literal["holding", "closed", "watch_only"]
 UserRole = Literal["user", "admin"]
-NotificationType = Literal["price_alert", "report_alert", "followup_due"]
+NotificationType = Literal["price_alert", "report_alert", "followup_due", "watch_monitor"]
 
 
 class UserPublic(BaseModel):
@@ -63,6 +63,9 @@ class AuthTokenResponse(BaseModel):
     user: UserPublic
 
 
+MonitorIntervalMinutes = Literal[1, 5, 10, 15, 30, 60]
+
+
 class WatchlistItemBase(BaseModel):
     symbol: str = Field(min_length=4, max_length=20)
     group_name: str = Field(default="默认分组", min_length=1, max_length=64)
@@ -71,6 +74,9 @@ class WatchlistItemBase(BaseModel):
     alert_price_up: Optional[float] = Field(default=None, gt=0)
     alert_price_down: Optional[float] = Field(default=None, gt=0)
     target_position_pct: Optional[float] = Field(default=None, ge=0, le=100)
+    monitor_enabled: bool = False
+    monitor_interval_minutes: MonitorIntervalMinutes = 15
+    monitor_focus: List[str] = Field(default_factory=list, max_length=8)
 
 
 class WatchlistItemCreate(WatchlistItemBase):
@@ -84,6 +90,9 @@ class WatchlistItemUpdate(BaseModel):
     alert_price_up: Optional[float] = Field(default=None, gt=0)
     alert_price_down: Optional[float] = Field(default=None, gt=0)
     target_position_pct: Optional[float] = Field(default=None, ge=0, le=100)
+    monitor_enabled: Optional[bool] = None
+    monitor_interval_minutes: Optional[MonitorIntervalMinutes] = None
+    monitor_focus: Optional[List[str]] = Field(default=None, max_length=8)
 
 
 class WatchlistItem(BaseModel):
@@ -102,6 +111,13 @@ class WatchlistItem(BaseModel):
     alert_price_up: Optional[float]
     alert_price_down: Optional[float]
     target_position_pct: Optional[float]
+    monitor_enabled: bool = False
+    monitor_interval_minutes: MonitorIntervalMinutes = 15
+    monitor_focus: List[str] = Field(default_factory=list)
+    monitor_last_checked_at: Optional[datetime] = None
+    monitor_last_summary: Optional[str] = None
+    monitor_last_signal_level: Optional[str] = None
+    monitor_last_notified_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 
@@ -235,6 +251,7 @@ class NotificationSetting(BaseModel):
     enable_price_alert: bool
     enable_report_alert: bool
     enable_followup_due_alert: bool
+    enable_watch_monitor_alert: bool
     updated_at: datetime
 
 
@@ -242,6 +259,7 @@ class NotificationSettingUpdate(BaseModel):
     enable_price_alert: Optional[bool] = None
     enable_report_alert: Optional[bool] = None
     enable_followup_due_alert: Optional[bool] = None
+    enable_watch_monitor_alert: Optional[bool] = None
 
 
 class NotificationItem(BaseModel):
@@ -269,6 +287,47 @@ class NotificationRefreshResponse(BaseModel):
 
 class NotificationReadResponse(BaseModel):
     item: NotificationItem
+
+
+class WatchlistMonitorRunResponse(BaseModel):
+    item_id: int
+    symbol: str
+    summary: str
+    signal_level: str
+    checked_at: datetime
+    created_notification: bool
+
+
+class WatchlistMonitorBatchRunResponse(BaseModel):
+    checked_count: int
+    created_notification_count: int
+    high_signal_count: int
+    medium_signal_count: int
+    low_signal_count: int
+    checked_at: datetime
+
+
+class WatchlistMonitorDailyReportItem(BaseModel):
+    item_id: int
+    symbol: str
+    name: str
+    signal_level: str
+    summary: str
+    interval_minutes: int
+    last_checked_at: Optional[datetime] = None
+
+
+class WatchlistMonitorDailyReportResponse(BaseModel):
+    generated_at: datetime
+    total_enabled: int
+    checked_today_count: int
+    high_signal_count: int
+    medium_signal_count: int
+    low_signal_count: int
+    overview: str
+    highlights: List[str]
+    action_items: List[str]
+    focus_items: List[WatchlistMonitorDailyReportItem]
 
 
 class AdminUserListResponse(BaseModel):

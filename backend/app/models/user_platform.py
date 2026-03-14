@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -50,6 +50,13 @@ class UserWatchlistItem(Base):
     alert_price_up: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     alert_price_down: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     target_position_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    monitor_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    monitor_interval_minutes: Mapped[int] = mapped_column(Integer, default=15, nullable=False)
+    monitor_focus_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    monitor_last_checked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    monitor_last_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    monitor_last_signal_level: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
+    monitor_last_notified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
@@ -99,6 +106,7 @@ class UserNotificationSetting(Base):
     enable_price_alert: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     enable_report_alert: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     enable_followup_due_alert: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    enable_watch_monitor_alert: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 

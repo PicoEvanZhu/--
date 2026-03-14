@@ -1,7 +1,7 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { BellOutlined } from "@ant-design/icons";
-import { Alert, Badge, Button, Layout, Menu, Space, Spin, Typography } from "antd";
+import { Alert, Avatar, Badge, Button, Dropdown, Layout, Menu, Space, Spin, Typography } from "antd";
 
 import { listMyNotifications } from "./api/account";
 import { appMenus } from "./data/menu";
@@ -14,6 +14,7 @@ const AdminFeedbacksPage = lazy(() => import("./pages/AdminFeedbacksPage"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const HomePage = lazy(() => import("./pages/HomePage"));
+const MainForcePage = lazy(() => import("./pages/MainForcePage"));
 const MyWorkspacePage = lazy(() => import("./pages/MyWorkspacePage"));
 const NoticePage = lazy(() => import("./pages/NoticePage"));
 const StockDetailPage = lazy(() => import("./pages/StockDetailPage"));
@@ -25,6 +26,10 @@ const { Text } = Typography;
 function resolveSelectedKey(pathname: string, search: string): string | null {
   if (pathname.startsWith("/dashboard")) {
     return "dashboard";
+  }
+
+  if (pathname.startsWith("/main-force")) {
+    return "main_force";
   }
 
   if (pathname.startsWith("/stocks")) {
@@ -198,39 +203,56 @@ function App() {
           <Header className="top-header">
             <div className="top-header-inner">
               <Text strong>股票助手 · 选股与分析工作台</Text>
-              <Space>
+              <Space className="top-header-actions">
                 {sessionUser ? (
                   <>
-                    <Text type="secondary">当前用户：{sessionUser.display_name || sessionUser.username}</Text>
-                    <Badge count={unreadCount} size="small" overflowCount={99}>
-                      <Button size="small" icon={<BellOutlined />} onClick={() => navigate("/notice")}>
-                        消息
-                      </Button>
+                    <Badge count={unreadCount} size="small" overflowCount={99} className="top-header-badge">
+                      <Button
+                        size="small"
+                        className="top-header-action top-header-icon-btn"
+                        icon={<BellOutlined />}
+                        aria-label="消息中心"
+                        onClick={() => navigate("/notice")}
+                      />
                     </Badge>
-                    <Button size="small" onClick={() => navigate("/my")}>
-                      个人中心
-                    </Button>
                     {guestMode ? (
-                      <Button size="small" type="primary" ghost onClick={() => navigate("/auth")}>
+                      <Button size="small" type="primary" ghost className="top-header-action" onClick={() => navigate("/auth")}>
                         注册账号
                       </Button>
                     ) : null}
-                    <Button
-                      size="small"
-                      onClick={() => {
-                        clearSession();
-                        navigate("/auth");
+                    <Dropdown
+                      placement="bottomRight"
+                      trigger={["click"]}
+                      menu={{
+                        items: [
+                          { key: "profile", label: "个人中心" },
+                          { type: "divider" },
+                          { key: "logout", label: "退出登录" },
+                        ],
+                        onClick: ({ key }) => {
+                          if (key === "profile") {
+                            navigate("/my");
+                          }
+                          if (key === "logout") {
+                            clearSession();
+                            navigate("/auth");
+                          }
+                        },
                       }}
                     >
-                      退出登录
-                    </Button>
+                      <Button size="small" className="top-header-action top-header-avatar-btn">
+                        <Avatar size={24} className="top-header-avatar">
+                          {(sessionUser.display_name || sessionUser.username || "?").slice(0, 1)}
+                        </Avatar>
+                      </Button>
+                    </Dropdown>
                   </>
                 ) : (
-                  <Space>
-                    <Button size="small" onClick={() => startGuestSession()}>
+                  <Space className="top-header-actions">
+                    <Button size="small" className="top-header-action" onClick={() => startGuestSession()}>
                       游客模式
                     </Button>
-                    <Button size="small" type="primary" ghost onClick={() => navigate("/auth")}>
+                    <Button size="small" type="primary" ghost className="top-header-action" onClick={() => navigate("/auth")}>
                       登录 / 注册
                     </Button>
                   </Space>
@@ -260,6 +282,7 @@ function App() {
               <Route path="/" element={<Navigate to={hasAccess ? "/home" : "/stocks"} replace />} />
               <Route path="/home" element={hasAccess ? <HomePage /> : <Navigate to="/auth" replace />} />
               <Route path="/dashboard" element={hasAccess ? <DashboardPage /> : <Navigate to="/auth" replace />} />
+              <Route path="/main-force" element={hasAccess ? <MainForcePage /> : <Navigate to="/auth" replace />} />
               <Route path="/stocks" element={<StocksPage />} />
               <Route path="/stocks/:symbol" element={<StockDetailPage />} />
               <Route path="/auth" element={<AuthPage />} />

@@ -2257,10 +2257,10 @@ function StocksPage() {
           </Space>
         </Card>
 
+        <div className="stocks-topic-section">
         <Card
           className="stocks-topic-card"
           size="small"
-          style={{ marginBottom: 12 }}
           title={
             <div className="stocks-topic-card-title">
               <Text className="stocks-topic-card-title-text">专题模块</Text>
@@ -2347,7 +2347,7 @@ function StocksPage() {
         ) : null}
 
         {!dividendCenterHidden ? (
-        <Card size="small" style={{ marginBottom: 12 }} title="分红中心（Beta）">
+        <Card size="small" style={{ marginBottom: 0 }} title="分红中心（Beta）">
           <Space direction="vertical" size={10} style={{ width: "100%" }}>
             <Space wrap>
               <Tag color="gold">分红股 {dividendSummary.total}</Tag>
@@ -2435,7 +2435,7 @@ function StocksPage() {
 
         {dividendPanelsError ? (
           <Alert
-            style={{ marginBottom: 12 }}
+            style={{ marginBottom: 0 }}
             type="warning"
             showIcon
             message={`分红专题加载失败：${dividendPanelsError}`}
@@ -2451,7 +2451,7 @@ function StocksPage() {
         ) : null}
 
         {!dividendCalendarHidden || !highYieldHidden ? (
-        <Row gutter={[12, 12]} style={{ marginBottom: 12 }}>
+        <Row gutter={[12, 12]} style={{ marginBottom: 0 }}>
           {!dividendCalendarHidden ? (
             <Col xs={24} xl={dividendPanelSpan}>
               <Card
@@ -2613,6 +2613,8 @@ function StocksPage() {
           ) : null}
         </Row>
         ) : null}
+
+        </div>
 
         <Row gutter={[12, 12]}>
           <Col xs={24} md={8}>

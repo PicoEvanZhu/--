@@ -88,6 +88,7 @@ function defaultNotificationSetting(): NotificationSetting {
     enable_price_alert: true,
     enable_report_alert: true,
     enable_followup_due_alert: true,
+    enable_watch_monitor_alert: true,
     updated_at: nowIso(),
   };
 }
@@ -325,6 +326,26 @@ export function deleteGuestWatchlistItem(itemId: number): boolean {
   return true;
 }
 
+export function updateGuestWatchlistItem(itemId: number, payload: Partial<WatchlistItem>): WatchlistItem | null {
+  const store = loadStore();
+  const index = store.watchlist.findIndex((row) => row.id === itemId);
+  if (index < 0) {
+    return null;
+  }
+  const current = store.watchlist[index];
+  const next: WatchlistItem = {
+    ...current,
+    ...payload,
+    monitor_enabled: payload.monitor_enabled ?? current.monitor_enabled ?? false,
+    monitor_interval_minutes: payload.monitor_interval_minutes ?? current.monitor_interval_minutes ?? 15,
+    monitor_focus: payload.monitor_focus ?? current.monitor_focus ?? ["price_move", "near_alert", "trend_breakout"],
+    updated_at: nowIso(),
+  };
+  store.watchlist[index] = next;
+  saveStore(store);
+  return next;
+}
+
 export async function createGuestPosition(payload: PositionCreateRequest): Promise<PositionSnapshot> {
   const symbol = normalizeSymbol(payload.symbol);
   if (!symbol) {
@@ -514,6 +535,7 @@ export function updateGuestNotificationSettings(payload: NotificationSettingUpda
     enable_price_alert: payload.enable_price_alert ?? store.notificationSetting.enable_price_alert,
     enable_report_alert: payload.enable_report_alert ?? store.notificationSetting.enable_report_alert,
     enable_followup_due_alert: payload.enable_followup_due_alert ?? store.notificationSetting.enable_followup_due_alert,
+    enable_watch_monitor_alert: payload.enable_watch_monitor_alert ?? store.notificationSetting.enable_watch_monitor_alert,
     updated_at: nowIso(),
   };
   saveStore(store);
@@ -552,6 +574,7 @@ export function refreshGuestNotifications(): NotificationRefreshResponse {
     price_alert: 0,
     report_alert: 0,
     followup_due: 0,
+    watch_monitor: 0,
   };
   const existingKeys = new Set(store.notifications.map((item) => notificationEventKeyFromPayload(item.payload)));
   const today = todayText();
