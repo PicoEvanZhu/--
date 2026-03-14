@@ -8,6 +8,8 @@ from app.core.database import get_db
 from app.models.user_platform import AppUser
 from app.schemas.stock import (
     MarketType,
+    MainForceJobResponse,
+    MainForceJobStartRequest,
     MainForceScanResponse,
     MainForceSettingResponse,
     MainForceSettingUpdate,
@@ -29,7 +31,15 @@ from app.schemas.stock import (
     StockTradeReviewUpdate,
 )
 from app.services.enrichment_service import enrich_stock_universe, get_enrichment_status
-from app.services.main_force_service import get_latest_scan, get_main_force_setting_payload, scan_main_force_candidates, update_main_force_setting
+from app.services.main_force_service import (
+    get_latest_main_force_job,
+    get_latest_scan,
+    get_main_force_job,
+    get_main_force_setting_payload,
+    scan_main_force_candidates,
+    start_main_force_job,
+    update_main_force_setting,
+)
 from app.services.stock_service import (
     ask_stock_question,
     get_sector_rotation_summary,
@@ -217,6 +227,49 @@ def update_main_force_settings(
     db: Session = Depends(get_db),
 ) -> MainForceSettingResponse:
     return MainForceSettingResponse(**update_main_force_setting(db=db, payload=payload.model_dump()))
+
+
+def _main_force_job_response(job) -> MainForceJobResponse:
+    return MainForceJobResponse(
+        job_id=job.id,
+        status=job.status,
+        market=job.market,
+        total=job.total,
+        processed=job.processed,
+        candidates_found=job.candidates_found,
+        scan_id=job.scan_id,
+        started_at=job.started_at.isoformat() if job.started_at else None,
+        finished_at=job.finished_at.isoformat() if job.finished_at else None,
+        error_message=job.error_message,
+    )
+
+
+@router.post("/main-force/jobs", response_model=MainForceJobResponse, status_code=status.HTTP_201_CREATED)
+def start_main_force_job_endpoint(
+    payload: MainForceJobStartRequest,
+    db: Session = Depends(get_db),
+) -> MainForceJobResponse:
+    job = start_main_force_job(db=db, payload=payload.model_dump())
+    return _main_force_job_response(job)
+
+
+@router.get("/main-force/jobs/{job_id}", response_model=MainForceJobResponse)
+def get_main_force_job_endpoint(
+    job_id: int,
+    db: Session = Depends(get_db),
+) -> MainForceJobResponse:
+    job = get_main_force_job(db=db, job_id=job_id)
+    if job is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="任务不存在")
+    return _main_force_job_response(job)
+
+
+@router.get("/main-force/jobs/latest", response_model=MainForceJobResponse)
+def get_main_force_job_latest_endpoint(db: Session = Depends(get_db)) -> MainForceJobResponse:
+    job = get_latest_main_force_job(db=db)
+    if job is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="暂无任务记录")
+    return _main_force_job_response(job)
 
 
 @router.get("/{symbol}/reviews", response_model=StockTradeReviewResponse)
