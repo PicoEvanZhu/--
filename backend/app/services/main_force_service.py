@@ -10,6 +10,7 @@ from typing import List, Optional, Tuple
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.core.database import SessionLocal
 from app.models.main_force import MainForceJob, MainForceScan, MainForceSetting
 from app.schemas.stock import MainForceCandidate, MainForceMetrics, MainForceScanResponse, MainForceSignalLevel, MainForceStage
 from app.services.llm_service import chat_completion
@@ -412,11 +413,226 @@ def run_main_force_schedule(db: Session) -> bool:
         delta = now - setting.last_run_at
         if delta.total_seconds() < interval_minutes * 60:
             return False
-    scan_main_force_candidates(db=db, use_settings=True, persist=True)
+    start_main_force_job(db=db, payload={"market": "A股"})
     setting.last_run_at = now
     db.add(setting)
     db.commit()
     return True
+
+
+def _job_stage_allowed(stage: MainForceStage, stage_filter: Optional[MainForceStage]) -> bool:
+    if stage_filter is None:
+        return stage in {"accumulation", "markup"}
+    return stage == stage_filter
+
+
+def _build_job_config(base_settings, overrides: dict, payload: dict) -> dict:
+    defaults = _default_main_force_config(base_settings)
+    effective = _merge_config(defaults, overrides)
+    effective.update({key: value for key, value in payload.items() if key.startswith("main_force_")})
+    return effective
+
+
+def get_main_force_job(db: Session, job_id: int) -> Optional[MainForceJob]:
+    return db.query(MainForceJob).filter(MainForceJob.id == job_id).first()
+
+
+def get_latest_main_force_job(db: Session) -> Optional[MainForceJob]:
+    return db.query(MainForceJob).order_by(MainForceJob.created_at.desc()).first()
+
+
+def start_main_force_job(db: Session, payload: dict) -> MainForceJob:
+    running = (
+        db.query(MainForceJob)
+        .filter(MainForceJob.status == "running")
+        .order_by(MainForceJob.created_at.desc())
+        .first()
+    )
+    if running is not None:
+        return running
+
+    job = MainForceJob(
+        status="pending",
+        market=payload.get("market") or "A股",
+        config_json=json.dumps(payload, ensure_ascii=False),
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
+    Thread(target=_run_main_force_job, args=(job.id, payload), daemon=True).start()
+    return job
+
+
+def _run_main_force_job(job_id: int, payload: dict) -> None:
+    db = SessionLocal()
+    try:
+        job = get_main_force_job(db, job_id)
+        if job is None:
+            return
+
+        job.status = "running"
+        job.started_at = _utc_now()
+        db.add(job)
+        db.commit()
+
+        base_settings = get_settings()
+        overrides = _load_setting_overrides(get_or_create_main_force_setting(db))
+        config = _build_job_config(base_settings, overrides, payload)
+        config_ns = SimpleNamespace(**config)
+
+        batch_size = int(payload.get("batch_size") or 200)
+        stage_filter = payload.get("stage")
+        min_signal_level = payload.get("min_signal_level") or "medium"
+        max_candidates = int(payload.get("max_candidates") or 300)
+        with_web = payload.get("with_web")
+        if with_web is None:
+            with_web = bool(config_ns.main_force_scan_with_web)
+        with_llm = payload.get("with_llm")
+        if with_llm is None:
+            with_llm = bool(config_ns.main_force_scan_with_llm)
+        llm_top_n = int(payload.get("llm_top_n") or config_ns.main_force_scan_llm_top_n)
+        sentiment_top_n = int(payload.get("sentiment_top_n") or config_ns.main_force_scan_sentiment_top_n)
+
+        rows = _query_universe_rows(db, market=None, q=None)
+        market_set = {"A股", "创业板", "科创板"} if job.market == "A股" else {job.market}
+        filtered = [
+            row
+            for row in rows
+            if row.market in market_set
+            and row.listed
+            and not row.name.upper().startswith("ST")
+            and not row.name.upper().startswith("*ST")
+        ]
+
+        filtered.sort(key=lambda item: float(item.turnover or 0.0), reverse=True)
+        job.total = len(filtered)
+        db.add(job)
+        db.commit()
+
+        scan = MainForceScan(
+            generated_at=_utc_now(),
+            total_scanned=0,
+            candidates_json="[]",
+            config_json=json.dumps(config, ensure_ascii=False),
+        )
+        db.add(scan)
+        db.commit()
+        db.refresh(scan)
+
+        job.scan_id = scan.id
+        db.add(job)
+        db.commit()
+
+        candidates: List[MainForceCandidate] = []
+        processed = 0
+
+        def _sync_progress() -> None:
+            scan.total_scanned = processed
+            scan.candidates_json = json.dumps([item.model_dump() for item in candidates], ensure_ascii=False)
+            db.add(scan)
+            job.processed = processed
+            job.candidates_found = len(candidates)
+            db.add(job)
+            db.commit()
+
+        for row in filtered:
+            processed += 1
+            try:
+                kline = get_stock_kline(db=db, symbol=row.symbol, period="6mo", interval="1d")
+                if not kline or not kline.points:
+                    continue
+                points = kline.points
+                prices = [point.close for point in points]
+                opens = [point.open for point in points]
+                volumes = [point.volume for point in points]
+                metrics = _build_metrics(prices, opens, volumes)
+                if metrics is None:
+                    continue
+                score, stage, reason = _score_and_stage(metrics, config_ns)
+                signal_level = _signal_level(metrics, score, stage, config_ns)
+                if not _job_stage_allowed(stage, stage_filter):
+                    continue
+                if _signal_rank(signal_level) < _signal_rank(min_signal_level):
+                    continue
+
+                candidate = MainForceCandidate(
+                    symbol=row.symbol,
+                    name=row.name,
+                    market=row.market,  # type: ignore[arg-type]
+                    price=_market_price(row),
+                    change_pct=_market_change_pct(row),
+                    score=score,
+                    stage=stage,
+                    signal_level=signal_level,
+                    reason=reason,
+                    metrics=metrics,
+                )
+                candidates.append(candidate)
+                candidates.sort(key=lambda item: item.score, reverse=True)
+                if len(candidates) > max_candidates:
+                    candidates = candidates[:max_candidates]
+            except Exception:
+                continue
+
+            if processed % batch_size == 0:
+                _sync_progress()
+
+        if with_web and candidates:
+            for candidate in candidates[: max(0, sentiment_top_n)]:
+                sentiment_score, sentiment_summary, sentiment_sources = _fetch_sentiment(candidate.symbol, candidate.name)
+                if sentiment_score is not None:
+                    boost_step = max(1, config_ns.main_force_sentiment_boost_step)
+                    boost_weight = max(0, config_ns.main_force_sentiment_boost_weight)
+                    sentiment_boost = int(round((sentiment_score - 50) / boost_step)) * boost_weight
+                    candidate.score = int(max(1, min(99, candidate.score + sentiment_boost)))
+                candidate.sentiment_score = sentiment_score
+                candidate.sentiment_summary = sentiment_summary
+                candidate.sentiment_sources = sentiment_sources
+                if sentiment_score is not None:
+                    if sentiment_score >= config_ns.main_force_sentiment_high:
+                        candidate.reason = f"{candidate.reason} / 舆情偏多"
+                    elif sentiment_score <= config_ns.main_force_sentiment_low:
+                        candidate.reason = f"{candidate.reason} / 舆情偏空"
+                    if sentiment_score <= config_ns.main_force_sentiment_low:
+                        candidate.signal_level = "low"
+                    elif sentiment_score >= config_ns.main_force_sentiment_high and candidate.signal_level == "medium":
+                        candidate.signal_level = "high"
+
+        candidates.sort(key=lambda item: item.score, reverse=True)
+        if len(candidates) > max_candidates:
+            candidates = candidates[:max_candidates]
+
+        if with_llm and candidates:
+            for candidate in candidates[: max(0, llm_top_n)]:
+                candidate.llm_summary = _llm_summary(
+                    candidate.symbol,
+                    candidate.name,
+                    candidate.metrics,
+                    candidate.stage,
+                    candidate.sentiment_score,
+                    candidate.sentiment_summary,
+                )
+
+        _sync_progress()
+
+        job.status = "success"
+        job.finished_at = _utc_now()
+        db.add(job)
+        db.commit()
+    except Exception as exc:
+        try:
+            job = get_main_force_job(db, job_id)
+            if job is not None:
+                job.status = "failed"
+                job.error_message = str(exc)
+                job.finished_at = _utc_now()
+                db.add(job)
+                db.commit()
+        except Exception:
+            pass
+    finally:
+        db.close()
 
 
 def _llm_summary(
